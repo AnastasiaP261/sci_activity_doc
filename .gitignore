@@ -1,1 +1,6 @@
-/.env.dev
+/venv/
+/.idea/
+
+/config/
+
+
