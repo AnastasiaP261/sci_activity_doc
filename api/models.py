@@ -67,18 +67,21 @@ class Research(models.Model):
 
     researchers = models.ManyToManyField(user_model, db_table="researches_users_relation")
 
-    def researchers_ids(self) -> str:
+    def get_researchers_ids(self) -> str:
         """
          Возвращает строку, в которой перечислены id связанных исследователей
         """
         return f'{", ".join([str(user.id) for user in self.researchers.all()])}'
 
-    def researchers_names(self) -> str:
+    def get_researchers_names(self) -> str:
         """
         Возвращает строку, в которой перечислены Фамилия И.О. связанных исследователей
         :return:
         """
         return f'{", ".join([user.get_short_full_name() for user in self.researchers.all()])}'
+
+    get_researchers_ids.short_description = u'researchers_ids'
+    get_researchers_names.short_description = u'researchers_names'
 
     def __str__(self) -> str:
         return self.title
