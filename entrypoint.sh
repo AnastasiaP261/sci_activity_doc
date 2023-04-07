@@ -11,10 +11,13 @@ then
     echo "PostgreSQL started"
 fi
 
-# эти строки можно комментить и запускать самостоятельно после миграции
+# эту строку можно комментить и запускать самостоятельно
 #python manage.py flush --no-input # сброс таблиц
+
 python manage.py makemigrations
-#python manage.py migrate
+python manage.py migrate
+
+# эту строку можно комментить и запускать самостоятельно
 #python manage.py createcachetable
 #
 #if [ "$DJANGO_SUPERUSER_USERNAME" ]
