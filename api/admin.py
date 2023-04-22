@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, Research, Graph, Note
+from .models import User, Research, Graph, Note, NodesNotesRelation
 
 
 class UserAdmin(admin.ModelAdmin):
@@ -21,7 +21,12 @@ class NoteAdmin(admin.ModelAdmin):
     list_display = ['note_id', 'url', 'note_type', 'user_id']
 
 
+class NodesNotesRelationAdmin(admin.ModelAdmin):
+    list_display = ['id', 'node_id', 'note_id', 'graph_id']
+
+
 admin.site.register(User, UserAdmin)
 admin.site.register(Research, ResearchAdmin)
 admin.site.register(Graph, GraphAdmin)
 admin.site.register(Note, NoteAdmin)
+admin.site.register(NodesNotesRelation, NodesNotesRelationAdmin)

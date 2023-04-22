@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from sci_activity_doc.settings import AUTH_USER_MODEL as user_model
-import typing
 
 
 # Прим: ограничение max_length в типе models.TextField используется только тогда,
@@ -115,3 +114,16 @@ class Note(models.Model):
 
     def __str__(self) -> str:
         return f"{self.note_type} {self.note_id}"
+
+
+class NodesNotesRelation(models.Model):
+    """
+    Таблица связи для заметок и узлов.
+    (узлы не будут описаны как модель, их node_id описаны в поле data в Графе)
+    """
+
+    id = models.IntegerField(verbose_name="id", primary_key=True, help_text="просто идентификатор строки")
+    node_id = models.IntegerField(verbose_name="node_id")
+
+    note_id = models.ForeignKey(Note, on_delete=models.PROTECT)
+    graph_id = models.ForeignKey(Graph, on_delete=models.PROTECT)
