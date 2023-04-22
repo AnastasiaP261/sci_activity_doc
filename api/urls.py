@@ -18,35 +18,13 @@ from django.urls import re_path  # тот же path, только умеет в 
 from django.conf import urls
 from django.views.generic import TemplateView
 from rest_framework import routers, permissions
-from drf_yasg.views import get_schema_view
-from drf_yasg import openapi
+from rest_framework_swagger.views import get_swagger_view
 
 from . import views
 
-schema_view = get_schema_view(
-    openapi.Info(
-        title="SciActivityDoc API schema",
-        default_version='v1',
-        terms_of_service="https://www.google.com/policies/terms/",
-        contact=openapi.Contact(email="petrichuk.nastya@yandex.ru"),
-    ),
-    public=True,
-    permission_classes=[permissions.AllowAny, ],
-)
 
 urlpatterns = [
-    # это все для сваггера (см. https://gadjimuradov.ru/post/swagger-dlya-django-rest-framework/)
-    re_path(r'^swagger(?:\.json|\.yaml)$',
-            # schema_view.without_ui создает экземпляр представления, используя только средства визуализации
-            # JSON и YAML, опционально обернутые с помощью cache_page
-            # (см. https://docs.djangoproject.com/en/dev/topics/cache/).
-            schema_view.without_ui(cache_timeout=0),
-            name='schema-json'),
-    path('swagger/',
-         # создает экземпляр представления с помощью средства визуализации веб-интерфейса,
-         # опционально обернутого с помощью cache_page.
-         schema_view.with_ui('swagger', cache_timeout=0),
-         name='schema-swagger-ui'),
+    path(r'swagger/', get_swagger_view(title='Pastebin API')),
 
     path('auth/', include('rest_framework.urls', namespace='rest_framework')),
 
