@@ -4,5 +4,6 @@
 /config/
 
 /postgres_data/
+db.sqlite3
 
 
