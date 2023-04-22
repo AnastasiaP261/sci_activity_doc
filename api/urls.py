@@ -18,18 +18,29 @@ from django.urls import re_path  # тот же path, только умеет в 
 from django.conf import urls
 from django.views.generic import TemplateView
 from rest_framework import routers, permissions
-from rest_framework_swagger.views import get_swagger_view
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
 
 from . import views
 
+schema_view = get_schema_view(
+    openapi.Info(
+        title="SciActivityDoc API schema",
+        default_version='v1',
+    ),
+    public=True,  # TODO: настроить доступ см https://drf-yasg.readthedocs.io/en/stable/settings.html#authorization
+    permission_classes=[permissions.AllowAny],
+)
 
 urlpatterns = [
-    path(r'swagger/', get_swagger_view(title='Pastebin API')),
+    # это все для сваггера. Подробнее см. https://github.com/axnsan12/drf-yasg/
+    re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='json/yaml схема api'),
+    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema swagger-ui'),
 
     path('auth/', include('rest_framework.urls', namespace='rest_framework')),
 
     path('user/', views.UserGetView.as_view(), name='Возвращает информацию о текущем пользователе'),
-    path('researchers/', views.ResearcherListView.as_view(),
+    path('researcher/', views.ResearcherListView.as_view(),
          name='Возвращает список исследователей, отсортированных по ФИО. '
               'В конце списка будут присутствовать "архивные" пользователи.'),
 

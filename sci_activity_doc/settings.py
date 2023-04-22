@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'rest_framework_swagger',
+    'drf_yasg',  # генератор swagger -- см. https://github.com/axnsan12/drf-yasg/
     'api.apps.ApiConfig',
     'core.apps.CoreConfig',
 ]
