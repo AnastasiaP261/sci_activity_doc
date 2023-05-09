@@ -1,0 +1,214 @@
+[
+  {
+    "model": "auth_wrapper.user",
+    "pk": 2,
+    "fields": {
+      "password": "orlova123",
+      "last_login": null,
+      "is_superuser": false,
+      "username": "orlova",
+      "email": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2023-05-09T14:01:40Z",
+      "first_name": "Александра",
+      "surname": "Павловна",
+      "last_name": "Орлова",
+      "study_group": "преподаватель",
+      "groups": [
+        2,
+        3
+      ],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "auth_wrapper.user",
+    "pk": 3,
+    "fields": {
+      "password": "peshaya123",
+      "last_login": null,
+      "is_superuser": false,
+      "username": "peshaya",
+      "email": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2023-05-09T14:02:25Z",
+      "first_name": "Антонина",
+      "surname": "Юрьевна",
+      "last_name": "Пешая",
+      "study_group": "преподаватель",
+      "groups": [
+        3
+      ],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "auth_wrapper.user",
+    "pk": 4,
+    "fields": {
+      "password": "kononenko123",
+      "last_login": null,
+      "is_superuser": false,
+      "username": "kononenko",
+      "email": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2023-05-09T14:03:27Z",
+      "first_name": "Антон",
+      "surname": "Вячеславович",
+      "last_name": "Кононенко",
+      "study_group": "РК6-71б",
+      "groups": [
+        1
+      ],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "auth_wrapper.user",
+    "pk": 5,
+    "fields": {
+      "password": "andreeva123",
+      "last_login": null,
+      "is_superuser": false,
+      "username": "andreeva",
+      "email": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2023-05-09T14:04:09Z",
+      "first_name": "Полина",
+      "surname": "Павловна",
+      "last_name": "Андреева",
+      "study_group": "РК6-71б",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "auth_wrapper.user",
+    "pk": 6,
+    "fields": {
+      "password": "petrichuk123",
+      "last_login": null,
+      "is_superuser": false,
+      "username": "petrichuk",
+      "email": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2023-05-09T14:04:45Z",
+      "first_name": "Анастасия",
+      "surname": "Олеговна",
+      "last_name": "Петричук",
+      "study_group": "РК6-71б",
+      "groups": [
+        1
+      ],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "auth_wrapper.user",
+    "pk": 7,
+    "fields": {
+      "password": "ivanov123",
+      "last_login": null,
+      "is_superuser": false,
+      "username": "ivanov",
+      "email": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2023-05-09T14:05:16Z",
+      "first_name": "Иван",
+      "surname": "Иванович",
+      "last_name": "Иванов",
+      "study_group": "РК6-72б",
+      "groups": [
+        1
+      ],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "auth.group",
+    "pk": 1,
+    "fields": {
+      "name": "researcher",
+      "permissions": [
+        31,
+        36,
+        35,
+        32,
+        33,
+        34,
+        41,
+        42,
+        43,
+        44,
+        37,
+        38,
+        39,
+        40,
+        30,
+        28,
+        24
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "pk": 2,
+    "fields": {
+      "name": "admin",
+      "permissions": [
+        1,
+        2,
+        3,
+        4,
+        9,
+        10,
+        11,
+        12,
+        5,
+        6,
+        7,
+        8,
+        21,
+        22,
+        23,
+        24
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "pk": 3,
+    "fields": {
+      "name": "professor",
+      "permissions": [
+        31,
+        36,
+        35,
+        32,
+        33,
+        34,
+        41,
+        42,
+        43,
+        44,
+        37,
+        38,
+        39,
+        40,
+        25,
+        30,
+        29,
+        26,
+        27,
+        28,
+        24
+      ]
+    }
+  }
+]
