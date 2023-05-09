@@ -44,4 +44,14 @@ urlpatterns = [
          name='Возвращает список исследователей, отсортированных по ФИО. '
               'В конце списка будут присутствовать "архивные" пользователи.'),
 
+    # path('note/'),
+    #
+    # path('research/<str:rsrch_id>/graph/<int:graph_id>/node/<int:node_id>'),
+    # path('research/<str:rsrch_id>/graph/<int:graph_id>/node/'),
+    #
+    # path('research/<str:rsrch_id>/graph/<int:graph_id>/'),
+    # path('research/<str:rsrch_id>/graph/'),
+    #
+    # path('research/<str:rsrch_id>/'),
+    # path('research/'),
 ]

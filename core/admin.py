@@ -1,11 +1,5 @@
 from django.contrib import admin
-from .models import User, Research, Graph, Note, NodesNotesRelation
-
-
-class UserAdmin(admin.ModelAdmin):
-    list_display = ['id', 'last_name', 'first_name', 'surname', 'study_group', 'username', 'email', 'is_staff',
-                    'is_active', 'last_login']
-    ordering = ['last_name', 'first_name', 'surname']
+from .models import Research, Graph, Note, NodesNotesRelation
 
 
 class ResearchAdmin(admin.ModelAdmin):
@@ -25,7 +19,6 @@ class NodesNotesRelationAdmin(admin.ModelAdmin):
     list_display = ['id', 'node_id', 'note_id', 'graph_id']
 
 
-admin.site.register(User, UserAdmin)
 admin.site.register(Research, ResearchAdmin)
 admin.site.register(Graph, GraphAdmin)
 admin.site.register(Note, NoteAdmin)

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
-from core.models import User, Research, Graph, Note, NodesNotesRelation
+from core.models import Research, Graph, Note, NodesNotesRelation
+from user.models import User
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):

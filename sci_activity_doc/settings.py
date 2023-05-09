@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'drf_yasg',  # генератор swagger -- см. https://github.com/axnsan12/drf-yasg/
     'api.apps.ApiConfig',
     'core.apps.CoreConfig',
+    'user.apps.UserConfig',
 ]
 
 MIDDLEWARE = [
@@ -89,6 +90,10 @@ DATABASES = {
     }
 }
 
+FIXTURE_DIRS = [
+    os.path.join(BASE_DIR, 'sci_activity_doc', 'fixtures'),
+]
+
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
 
@@ -129,4 +134,4 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # переопределение модели пользователя
-AUTH_USER_MODEL = 'core.User'
+AUTH_USER_MODEL = 'user.User'
