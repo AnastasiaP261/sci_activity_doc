@@ -5,6 +5,7 @@ from sci_activity_doc.settings import AUTH_USER_MODEL as user_model
 # Прим: ограничение max_length в типе models.TextField используется только тогда,
 # когда поле отображается в формах (оно не применяется на уровне базы данных)
 
+
 class Research(models.Model):
     """
     Исследование TODO: дописать в соответствии с определением из курсача
@@ -42,7 +43,7 @@ class Research(models.Model):
     get_researchers_names.short_description = u'researchers_names'
 
     def __str__(self) -> str:
-        return self.title.__str__()
+        return f'({self.rsrch_id}) {self.title.__str__()}'
 
 
 class Graph(models.Model):
@@ -51,7 +52,7 @@ class Graph(models.Model):
     """
 
     graph_id = models.IntegerField(verbose_name="graph_id", primary_key=True)
-    data = models.TextField(verbose_name="data")
+    data = models.TextField(verbose_name="data", blank=True)
     title = models.CharField(verbose_name="title", max_length=200, blank=False)
 
     research_id = models.ForeignKey(Research, on_delete=models.CASCADE, blank=False)
@@ -63,7 +64,7 @@ class Graph(models.Model):
         )
 
     def __str__(self) -> str:
-        return self.title.__str__()
+        return f'({self.graph_id.__str__()}) {self.title.__str__()}'
 
 
 class Note(models.Model):
@@ -80,7 +81,7 @@ class Note(models.Model):
     user_id = models.ForeignKey(user_model, blank=False, on_delete=models.PROTECT)
 
     def __str__(self) -> str:
-        return f"{self.note_type} {self.note_id}"
+        return f"{self.note_id} {self.note_type}"
 
 
 class NodesNotesRelation(models.Model):
@@ -90,7 +91,7 @@ class NodesNotesRelation(models.Model):
     """
 
     id = models.IntegerField(verbose_name="id", primary_key=True, help_text="просто идентификатор строки")
-    node_id = models.IntegerField(verbose_name="node_id", blank=False)
+    node_id = models.CharField(verbose_name="node_id", blank=False, max_length=3)
 
     note_id = models.ForeignKey(Note, on_delete=models.PROTECT, blank=False)
     graph_id = models.ForeignKey(Graph, on_delete=models.PROTECT, blank=False)

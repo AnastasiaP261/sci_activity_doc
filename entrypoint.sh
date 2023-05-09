@@ -28,4 +28,6 @@ then
         --email $DJANGO_SUPERUSER_EMAIL
 fi
 
+python manage.py loaddata dev/subjects.json
+
 exec "$@"

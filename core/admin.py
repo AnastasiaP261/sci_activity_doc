@@ -2,6 +2,8 @@ from django.contrib import admin
 from .models import Research, Graph, Note, NodesNotesRelation
 
 
+# TODO: добавить множественные числа для админки
+
 class ResearchAdmin(admin.ModelAdmin):
     list_display = ['rsrch_id', 'title', 'description', 'start_date', 'end_date',
                     'get_researchers_ids']  # либо использовать researchers_names вместо researchers_ids
