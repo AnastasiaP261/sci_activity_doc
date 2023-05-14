@@ -12,6 +12,9 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 from pathlib import Path
 import os
+from datetime import timedelta
+from rest_framework.settings import api_settings
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,10 +23,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get("SECRET_KEY", default='local_secret_key')
+SECRET_KEY = os.environ.get("SECRET_KEY", default='dkjhskjfhueuifbckdjseif73t4r4ui384tged9-ree34')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = int(os.environ.get("DEBUG", default=1))
+DEBUG = int(os.environ.get("DEBUG", default=0))
 
 # 'DJANGO_ALLOWED_HOSTS' should be a single string of hosts with a space between each.
 # For example: 'DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]'
@@ -44,15 +47,16 @@ INSTALLED_APPS = [
     'drf_yasg',  # генератор swagger -- см. https://github.com/axnsan12/drf-yasg/
     'api.apps.ApiConfig',
     'core.apps.CoreConfig',
-    'user.apps.UserConfig',
+    'auth_wrapper.apps.AuthWrapperConfig',
+    'knox',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',  # Управление сессиями между запросами
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',  # Связывает использующих сессии пользователей запросами
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -96,7 +100,6 @@ FIXTURE_DIRS = [
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -114,24 +117,59 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
-
+STATIC_ROOT = ''
 STATIC_URL = 'static/'
+STATICFILES_DIRS = ('static',)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # переопределение модели пользователя
-AUTH_USER_MODEL = 'user.User'
+AUTH_USER_MODEL = 'auth_wrapper.User'
+
+LOGIN_REDIRECT_URL = '/'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': ('knox.auth.TokenAuthentication',),
+}
+
+LOCAL_ENV = "LOCAL" # запуск в локальном окружении
+DEV_ENV = "DEV" # запуск в development окружении (в контейнере)
+PROD_ENV = "PROD" # запуск в production окружении
+
+# позволяет выставлять простые пароли в dev и local среде TODO: по умолчанию должны выставляться строгие настройки
+if os.environ.get("ENVIRONMENT", default=PROD_ENV) in (LOCAL_ENV, DEV_ENV):
+    AUTH_PASSWORD_VALIDATORS = [
+        {
+            'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+            'OPTIONS': {
+                'min_length': 1,
+            }
+        },
+    ]
+
+# позволяет переопределить настройки аутентификации, в зависимости от окружения
+if os.environ.get("ENVIRONMENT", default=PROD_ENV) in (LOCAL_ENV, DEV_ENV):
+    REST_KNOX = {
+        # MD5 is not secure and must never be used in production sites
+        'SECURE_HASH_ALGORITHM': 'cryptography.hazmat.primitives.hashes.MD5',
+        'USER_SERIALIZER': 'api.serializers.CustomUserSerializer',
+        'TOKEN_LIMIT_PER_USER': None, # лимит токенов для каждого пользователя
+        'EXPIRY_DATETIME_FORMAT': api_settings.DATETIME_FORMAT,
+    }
+else:
+    REST_KNOX = {
+        'SECURE_HASH_ALGORITHM': 'cryptography.hazmat.primitives.hashes.SHA512',
+        'USER_SERIALIZER': 'api.serializers.CustomUserSerializer',
+        'TOKEN_LIMIT_PER_USER': 2,  # лимит токенов для каждого пользователя
+        'EXPIRY_DATETIME_FORMAT': api_settings.DATETIME_FORMAT,
+    }
+

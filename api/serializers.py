@@ -1,13 +1,13 @@
 from rest_framework import serializers
-
 from core.models import Research, Graph, Note, NodesNotesRelation
-from user.models import User
+from auth_wrapper.models import User
 
 
-class UserSerializer(serializers.HyperlinkedModelSerializer):
+class CustomUserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'last_name', 'first_name', 'surname', 'study_group', 'username', 'email', 'is_staff',
+        lookup_field = 'username'
+        fields = ('username', 'last_name', 'first_name', 'surname', 'study_group', 'email', 'is_staff',
                   'is_active', 'last_login')
 
 

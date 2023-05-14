@@ -112,7 +112,7 @@
     "model": "auth_wrapper.user",
     "pk": 7,
     "fields": {
-      "password": "ivanov123",
+      "password": "pbkdf2_sha256$600000$cxqBf2zfp5B9ALZuHdBJEr$dY79pxhjbrc9dM7DnC4MI94021mb2i+zxPVuGfVwr2M=",
       "last_login": null,
       "is_superuser": false,
       "username": "ivanov",

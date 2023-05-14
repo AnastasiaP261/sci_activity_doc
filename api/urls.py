@@ -20,8 +20,12 @@ from django.views.generic import TemplateView
 from rest_framework import routers, permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from knox import views as knox_views
 
+
+import auth_wrapper.views
 from . import views
+from auth_wrapper import urls as auth_wrapper_urls
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -37,9 +41,8 @@ urlpatterns = [
     re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='json/yaml схема api'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema swagger-ui'),
 
-    path('auth/', include('rest_framework.urls', namespace='rest_framework')),
+    path('auth/', include(auth_wrapper_urls.urlpatterns)),
 
-    path('user/', views.UserGetView.as_view(), name='Возвращает информацию о текущем пользователе'),
     path('researcher/', views.ResearcherListView.as_view(),
          name='Возвращает список исследователей, отсортированных по ФИО. '
               'В конце списка будут присутствовать "архивные" пользователи.'),
