@@ -133,7 +133,7 @@ STATICFILES_DIRS = ('static',)
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # переопределение модели пользователя
-AUTH_USER_MODEL = 'auth_wrapper.User'
+AUTH_USER_MODEL = 'core.User'
 
 LOGIN_REDIRECT_URL = '/'
 

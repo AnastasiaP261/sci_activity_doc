@@ -2,7 +2,8 @@ from rest_framework import generics
 from rest_framework.pagination import PageNumberPagination
 
 from .serializers import CustomUserSerializer
-from auth_wrapper.models import User
+from core.models import User
+from rest_framework import permissions, generics
 
 
 class StandardResultsSetPagination(PageNumberPagination):
@@ -23,3 +24,18 @@ class ResearcherListView(generics.ListAPIView):
     pagination_class = StandardResultsSetPagination
     queryset = User.objects.filter(is_superuser=False).order_by('last_name', 'first_name', 'surname')
     # TODO: добавить сортировку по архивности
+
+
+class UserGetView(generics.ListAPIView):
+    """
+    Текущий пользователь
+    """
+    serializer_class = CustomUserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'username'
+
+    def get_queryset(self):
+        return User.objects.filter(username=self.request.user.get_username())
+
+    def get_object(self):
+        return User.objects.get_by_natural_key(self.request.user.get_username())

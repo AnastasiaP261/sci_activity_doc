@@ -43,6 +43,7 @@ urlpatterns = [
 
     path('auth/', include(auth_wrapper_urls.urlpatterns)),
 
+    path('user/', views.UserGetView.as_view(), name='Возвращает информацию о текущем пользователе'),
     path('researcher/', views.ResearcherListView.as_view(),
          name='Возвращает список исследователей, отсортированных по ФИО. '
               'В конце списка будут присутствовать "архивные" пользователи.'),

@@ -22,11 +22,9 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
 from knox import views as knox_views
-from .views import LoginView, UserGetView
+from .views import LoginView
 
 urlpatterns = [
-    path('', UserGetView.as_view(), name='Возвращает информацию о текущем пользователе'),
-
     path(r'login/', LoginView.as_view(), name='knox login'),
     path(r'logout/', knox_views.LogoutView.as_view(), name='knox logout'),
     path(r'logoutall/', knox_views.LogoutAllView.as_view(), name='knox logoutall'),

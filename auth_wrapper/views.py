@@ -5,7 +5,7 @@ from rest_framework.authtoken.serializers import AuthTokenSerializer
 from knox.views import LoginView as KnoxLoginView
 
 from api.serializers import CustomUserSerializer
-from auth_wrapper.models import User
+from core.models import User
 
 
 class LoginView(KnoxLoginView):
@@ -18,17 +18,3 @@ class LoginView(KnoxLoginView):
         login(request, user)
         return super(LoginView, self).post(request, format=None)
 
-
-class UserGetView(generics.ListAPIView):
-    """
-    Текущий пользователь
-    """
-    serializer_class = CustomUserSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    lookup_field = 'username'
-
-    def get_queryset(self):
-        return User.objects.filter(username=self.request.user.get_username())
-
-    def get_object(self):
-        return User.objects.get_by_natural_key(self.request.user.get_username())
