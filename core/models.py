@@ -48,14 +48,21 @@ class User(AbstractUser):
         """
         return self.study_group.__str__()
 
-    def get_groups(self) -> str:
+    def get_groups_str(self) -> str:
         """
         Возвращает строку, в которой перечислены через запятую группы, в которых состоит пользователь
         :return:
         """
         return f'{", ".join([group.name for group in self.groups.all()])}'
 
-    get_groups.short_description = u'groups'
+    def get_groups_list(self) -> list:
+        """
+        Возвращает список, в которой перечислены через запятую группы, в которых состоит пользователь
+        :return:
+        """
+        return [group.name for group in self.groups.all()]
+
+    get_groups_str.short_description = u'groups'
 
     def __str__(self) -> str:
         return f"{self.last_name} {self.first_name} {self.study_group}"

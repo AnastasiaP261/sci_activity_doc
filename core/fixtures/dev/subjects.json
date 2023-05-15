@@ -175,7 +175,7 @@
       "username": "andreeva",
       "email": "",
       "is_staff": false,
-      "is_active": true,
+      "is_active": false,
       "date_joined": "2023-05-09T14:04:09Z",
       "first_name": "Полина",
       "surname": "Павловна",

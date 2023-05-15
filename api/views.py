@@ -22,8 +22,8 @@ class ResearcherListView(generics.ListAPIView):
     """
     serializer_class = CustomUserSerializer
     pagination_class = StandardResultsSetPagination
-    queryset = User.objects.filter(is_superuser=False).order_by('last_name', 'first_name', 'surname')
-    # TODO: добавить сортировку по архивности
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = User.objects.filter(is_superuser=False).order_by('-is_active', 'last_name', 'first_name', 'surname')
 
 
 class UserGetView(generics.ListAPIView):

@@ -3,11 +3,18 @@ from core.models import Research, Graph, Note, NodesNotesRelation, User
 
 
 class CustomUserSerializer(serializers.HyperlinkedModelSerializer):
+    groups = serializers.ListField(
+        child=serializers.CharField(min_length=1),
+        allow_empty=False,
+        read_only=True,
+        source='get_groups_list'
+    )
+
     class Meta:
         model = User
         lookup_field = 'username'
         fields = ('username', 'last_name', 'first_name', 'surname', 'study_group', 'email', 'is_staff',
-                  'is_active', 'last_login')
+                  'is_active', 'last_login', 'groups')
 
 
 class ResearchSerializer(serializers.HyperlinkedModelSerializer):
