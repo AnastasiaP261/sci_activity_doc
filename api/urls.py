@@ -22,7 +22,6 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from knox import views as knox_views
 
-
 import auth_wrapper.views
 from . import views
 from auth_wrapper import urls as auth_wrapper_urls
@@ -43,14 +42,15 @@ urlpatterns = [
 
     path('auth/', include(auth_wrapper_urls.urlpatterns)),
 
-    path('user/', views.UserGetView.as_view(), name='Возвращает информацию о текущем пользователе'),
-    path('researcher/', views.ResearcherListView.as_view(),
+    path('user/', views.UserDetail.as_view(), name='Возвращает информацию о текущем пользователе'),
+    path('researcher/', views.ResearcherList.as_view(),
          name='Возвращает список исследователей, отсортированных по ФИО. '
               'В конце списка будут присутствовать "архивные" пользователи.'),
 
-    # path('note/'),
-    #
-    # path('research/<str:rsrch_id>/graph/<int:graph_id>/node/<int:node_id>'),
+    path(r'note/<int:note_id>/', views.NoteDetail.as_view(),
+         name='GET - показ информации о заметке по ее айди, PUT - редактирование заметки, DELETE - удаление заметки'),
+
+    # path('research/<str:rsrch_id>/graph/<int:graph_id>/node/<int:node_id>/'),
     # path('research/<str:rsrch_id>/graph/<int:graph_id>/node/'),
     #
     # path('research/<str:rsrch_id>/graph/<int:graph_id>/'),
