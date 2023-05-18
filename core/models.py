@@ -43,12 +43,6 @@ class User(AbstractUser):
 
         return full_name.strip()
 
-    def get_study_group(self) -> str:
-        """
-        Возвращает группу, в которой обучается студент
-        """
-        return self.study_group.__str__()
-
     def get_groups_str(self) -> str:
         """
         Возвращает строку, в которой перечислены через запятую группы, в которых состоит пользователь
@@ -158,8 +152,8 @@ class NodesNotesRelation(models.Model):
     id = models.AutoField(verbose_name="id", primary_key=True, help_text="просто идентификатор строки")
     node_id = models.CharField(verbose_name="node_id", blank=False, max_length=3)
 
-    note_id = models.ForeignKey(Note, on_delete=models.PROTECT, blank=False)
-    graph_id = models.ForeignKey(Graph, on_delete=models.PROTECT, blank=False)
+    note_id = models.ForeignKey(Note, on_delete=models.PROTECT, blank=False, related_name='nodes')
+    graph_id = models.ForeignKey(Graph, on_delete=models.PROTECT, blank=False, related_name='nodes')
 
     class Meta:
         constraints = [
