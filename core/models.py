@@ -2,6 +2,9 @@ from django.db import models
 from sci_activity_doc.settings import AUTH_USER_MODEL as user_model
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
+import re
+import pydot
+
 
 
 # Прим: ограничение max_length в типе models.TextField используется только тогда,
@@ -102,7 +105,6 @@ class Research(models.Model):
     def __str__(self) -> str:
         return f'({self.rsrch_id}) {self.title.__str__()}'
 
-
 class Graph(models.Model):
     """
     Граф TODO: дописать в соответствии с определением из курсача
@@ -113,6 +115,25 @@ class Graph(models.Model):
     title = models.CharField(verbose_name="title", max_length=200, blank=False)
 
     research_id = models.ForeignKey(Research, on_delete=models.CASCADE, blank=False)
+
+    _dot = pydot.Dot
+
+    def _data_to_dot(self):
+        self._dot = pydot.graph_from_dot_data(self.data.__str__())[0]
+
+    def _dot_to_data(self):
+        self.data = self._dot.to_string()
+
+    def delete_node_from_dot(self, node_id: int):
+        self._data_to_dot()
+        self._dot.del_node(node_id)
+        self._dot_to_data()
+        super().save()
+
+    def node_with_node_id_exists(self, node_id: int) -> bool:
+        self._data_to_dot()
+        node_list = [i.get_name() for i in self._dot.get_nodes()]
+        return str(node_id) in node_list
 
     class Meta:
         permissions = (
@@ -138,7 +159,6 @@ class Note(models.Model):
                                     on_delete=models.CASCADE)  # тк заметка может быть не привязана к графу
     user_id = models.ForeignKey(user_model, blank=False, on_delete=models.PROTECT)
 
-
     def __str__(self) -> str:
         return f"{self.note_id} {self.note_type}"
 
@@ -150,14 +170,13 @@ class NodesNotesRelation(models.Model):
     """
 
     id = models.AutoField(verbose_name="id", primary_key=True, help_text="просто идентификатор строки")
+    # одна заметка может относиться к нескольким графам, к каждому единожды
     node_id = models.CharField(verbose_name="node_id", blank=False, max_length=3)
 
-    note_id = models.ForeignKey(Note, on_delete=models.PROTECT, blank=False, related_name='nodes')
-    graph_id = models.ForeignKey(Graph, on_delete=models.PROTECT, blank=False, related_name='nodes')
+    note_id = models.ForeignKey(Note, on_delete=models.PROTECT, blank=False)
+    graph_id = models.ForeignKey(Graph, on_delete=models.PROTECT, blank=False)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=['note_id', 'graph_id'], name='unique note in graph'),
         ]
-
-

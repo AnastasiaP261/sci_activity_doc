@@ -2,9 +2,12 @@ from rest_framework import generics
 from rest_framework.pagination import PageNumberPagination
 from django.http import Http404
 from . import serializers as s
-from core.models import User, Note, NodesNotesRelation
+from core.models import User, Note, NodesNotesRelation, Graph
 from rest_framework import permissions, generics, mixins, status
 from rest_framework.response import Response
+from django.db.models.signals import post_delete, pre_delete, post_save, pre_save, post_init, pre_init
+from django.dispatch import receiver
+from django.core.exceptions import ObjectDoesNotExist
 
 
 class StandardResultsSetPagination(PageNumberPagination):
@@ -41,12 +44,13 @@ class UserDetail(generics.ListAPIView):
 
 class NoteDetail(generics.GenericAPIView,
                  mixins.RetrieveModelMixin,
-                 mixins.UpdateModelMixin,
+                 # mixins.UpdateModelMixin,
                  mixins.DestroyModelMixin):
-    serializer_class = s.NoteListSerializer
+    serializer_class = s.NoteFullInfoSerializer
     lookup_url_kwarg = 'note_id'
-    permission_classes = [permissions.IsAuthenticated]
     lookup_field = 'note_id'
+
+    # permission_classes = [permissions.IsAuthenticated] TODO: включи
 
     def retrieve_get_object(self):
         try:
@@ -80,10 +84,10 @@ class NoteDetail(generics.GenericAPIView,
         return self.retrieve(request, *args, **kwargs)
 
     # def put(self, request, *args, **kwargs):
-    #     # TODO: обновление заметки не готово
+    #     # TODO: обновление заметки вроде не нужно, убери миксин
     #     return self.update(request, *args, **kwargs)
 
-    def destroy(self, request, *args, **kwargs):
+    def destroy_note_and_relations_and_update_graph_data(self, request, *args, **kwargs):
         note_id = int(self.kwargs.get(self.lookup_url_kwarg))
 
         NodesNotesRelation.objects.filter(note_id=note_id).delete()
@@ -92,4 +96,69 @@ class NoteDetail(generics.GenericAPIView,
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def delete(self, request, *args, **kwargs):
-        return self.destroy(request, *args, **kwargs)
+        return self.destroy_note_and_relations_and_update_graph_data(request, *args, **kwargs)
+
+
+class NoteList(generics.ListCreateAPIView):
+    serializer_class = s.NoteShortInfoSerializer
+    queryset = NodesNotesRelation.objects.prefetch_related('note_id__user_id').order_by('note_id__created_at')
+    pagination_class = StandardResultsSetPagination
+    # permission_classes = [permissions.IsAuthenticated] TODO: включи
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+
+        note_data = {
+            'url': validated_data['note_id']['url'],
+            'research_id_id': validated_data['note_id']['research_id_id'],
+            'user_id_id': validated_data['note_id']['user_id_id'],
+        }
+        if 'note_type' in validated_data['note_id']:
+            note_data['note_type'] = validated_data['note_id']['note_type']
+        else:
+            pass  # TODO: здесь должно доставаться из латеха
+        new_note = Note.objects.create(**note_data)
+
+        if 'graph_id_id' in validated_data:
+            try:
+                graph = Graph.objects.get(graph_id=validated_data['graph_id_id'])
+            except ObjectDoesNotExist:
+                return Response(status=status.HTTP_404_NOT_FOUND, exception='graph with such graph_id not exists')
+
+            if not graph.node_with_node_id_exists(validated_data['node_id']):
+                return Response(status=status.HTTP_404_NOT_FOUND,
+                                exception='node with such node_id not exists in graph')
+
+            notes_nodes_rel_data = NodesNotesRelation(
+                graph_id_id=validated_data['graph_id_id'],
+                node_id=validated_data['node_id'],
+                note_id_id=new_note.note_id,
+            )
+            notes_nodes_rel_data.save()
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+class GraphDetail(generics.GenericAPIView,
+                  mixins.RetrieveModelMixin,
+                  mixins.UpdateModelMixin,
+                  mixins.DestroyModelMixin):
+    lookup_url_kwarg = 'graph_id'
+    lookup_field = 'graph_id'
+    # permission_classes = [permissions.IsAuthenticated] TODO: включи
+
+    @receiver(pre_delete, sender=NodesNotesRelation)
+    def delete_node_from_data(sender, instance: NodesNotesRelation, **kwargs):
+        '''
+        Срабатывает перед удалением объекта NodesNotesRelation.
+        Обновляет поле data графа, удаляя оттуда node(и все его связи), соотвествующий удаленному объекту
+        '''
+        try:
+            graph_id = instance.graph_id_id
+            node_id = instance.node_id
+            Graph.objects.get(graph_id=graph_id).delete_node_from_dot(node_id)
+        except Note.DoesNotExist:
+            raise Http404

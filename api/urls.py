@@ -48,7 +48,9 @@ urlpatterns = [
               'В конце списка будут присутствовать "архивные" пользователи.'),
 
     path(r'note/<int:note_id>/', views.NoteDetail.as_view(),
-         name='GET - показ информации о заметке по ее айди, PUT - редактирование заметки, DELETE - удаление заметки'),
+         name='GET - показ информации о заметке по ее айди, DELETE - удаление заметки'),
+    path(r'note/', views.NoteList.as_view(),
+         name='GET - список последних заметок, POST - создание заметки'),
 
     # path('research/<str:rsrch_id>/graph/<int:graph_id>/node/<int:node_id>/'),
     # path('research/<str:rsrch_id>/graph/<int:graph_id>/node/'),

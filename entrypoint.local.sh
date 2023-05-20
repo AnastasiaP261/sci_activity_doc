@@ -3,7 +3,6 @@
 # установка всех переменных среды из файла ./config/.env.local
 # без учета строк начинающихся на "#"
 unamestr=$(uname)
-echo $unamestr
 if [ "$unamestr" = 'Linux' ]; then
   export $(grep -v '^#' ./config/.env.local | xargs -d '\n')
 elif [ "$unamestr" = 'FreeBSD' ] || [ "$unamestr" = 'Darwin' ]; then
@@ -36,3 +35,6 @@ python manage.py loaddata dev/subjects.json
 python manage.py runserver
 
 exec "$@"
+
+# для экспорта фикстур
+# python manage.py dumpdata app.model --indent 4 > fixtures__dev/fixtires_dev/model.json

@@ -15,7 +15,6 @@ import os
 from datetime import timedelta
 from rest_framework.settings import api_settings
 
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -24,6 +23,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get("SECRET_KEY", default='dkjhskjfhueuifbckdjseif73t4r4ui384tged9-ree34')
+
+LOCAL_ENV = "LOCAL"  # запуск в локальном окружении
+DEV_ENV = "DEV"  # запуск в development окружении (в контейнере)
+PROD_ENV = "PROD"  # запуск в production окружении
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = int(os.environ.get("DEBUG", default=0))
@@ -94,9 +97,16 @@ DATABASES = {
     }
 }
 
-FIXTURE_DIRS = [
-    os.path.join(BASE_DIR, 'sci_activity_doc', 'fixtures'),
-]
+if os.environ.get("ENVIRONMENT", default=PROD_ENV) in (LOCAL_ENV, DEV_ENV):
+    FIXTURE_DIRS = [
+        os.path.join(BASE_DIR, 'sci_activity_doc', 'fixtures', 'dev'),
+        os.path.join(BASE_DIR, 'core', 'fixtures', 'dev'),
+    ]
+else:
+    FIXTURE_DIRS = [
+        os.path.join(BASE_DIR, 'sci_activity_doc', 'fixtures', 'prod'),
+        os.path.join(BASE_DIR, 'core', 'fixtures', 'prod'),
+    ]
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
@@ -141,11 +151,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': ('knox.auth.TokenAuthentication',),
 }
 
-LOCAL_ENV = "LOCAL" # запуск в локальном окружении
-DEV_ENV = "DEV" # запуск в development окружении (в контейнере)
-PROD_ENV = "PROD" # запуск в production окружении
-
-# позволяет выставлять простые пароли в dev и local среде TODO: по умолчанию должны выставляться строгие настройки
+# позволяет выставлять простые пароли в fixtires_dev и local среде TODO: по умолчанию должны выставляться строгие настройки
 if os.environ.get("ENVIRONMENT", default=PROD_ENV) in (LOCAL_ENV, DEV_ENV):
     AUTH_PASSWORD_VALIDATORS = [
         {
@@ -162,7 +168,7 @@ if os.environ.get("ENVIRONMENT", default=PROD_ENV) in (LOCAL_ENV, DEV_ENV):
         # MD5 is not secure and must never be used in production sites
         'SECURE_HASH_ALGORITHM': 'cryptography.hazmat.primitives.hashes.MD5',
         'USER_SERIALIZER': 'api.serializers.CustomUserSerializer',
-        'TOKEN_LIMIT_PER_USER': None, # лимит токенов для каждого пользователя
+        'TOKEN_LIMIT_PER_USER': None,  # лимит токенов для каждого пользователя
         'EXPIRY_DATETIME_FORMAT': api_settings.DATETIME_FORMAT,
     }
 else:
@@ -172,4 +178,3 @@ else:
         'TOKEN_LIMIT_PER_USER': 2,  # лимит токенов для каждого пользователя
         'EXPIRY_DATETIME_FORMAT': api_settings.DATETIME_FORMAT,
     }
-
