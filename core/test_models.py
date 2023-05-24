@@ -1,47 +1,64 @@
+import collections
 from unittest import TestCase
 from .models import Graph
 
 
-class TestGraph(TestCase):
-    def setUp(self):
-        print("\nRunning setUp method...")
-
-        self.def_graph = Graph(
-            graph_id=1,
+class TestGraph__dot_to_dict_elements(TestCase):
+    def test_default_graph(self):
+        graph = Graph(
             data='''
-                digraph { 
-                    A; 
-                    B; 
-                    A -> B;
-                }
-            ''',
-            title='GR_1',
+                 digraph { 
+                     A; 
+                     B; 
+                     A -> B;
+                 }
+             ''',
         )
-        self.graph_with_subgraphs = Graph(
-            graph_id=2,
+        self.assertEqual(
+            graph._dot_to_dict_elements(),
+            {
+                0: {"A": []},
+                1: {"B": ["A"]}
+            },
+            msg='начальный граф',
+        )
+
+    def test_graph_with_parallel_branches(self):
+        graph = Graph(
             data='''
                 digraph { 
                     A; 
-                    1 [subgraph=3]; 
-                    2 [subgraph=4]; 
-                    3 [subgraph=5]; 
-                    4 [subgraph=6]; 
-                    5 [subgraph=7]; 
+                    1; 
+                    2; 
+                    3; 
+                    4; 
+                    5; 
                     B; 
-                    A -> 2; 
+                    A -> 1;
+                    1 -> 2; 
                     2 -> 3; 
                     2 -> 4; 
                     2 -> 5; 
-                    3 -> 1; 
-                    4 -> 1; 
-                    5 -> 1; 
-                    1 -> B; 
+                    3 -> B; 
+                    4 -> B; 
+                    5 -> B; 
                 }
-            ''',
-            title='GR_2',
+                ''',
         )
-        self.graph_with_cross_level_edge = Graph(
-            graph_id=3,
+        self.assertEqual(
+            graph._dot_to_dict_elements(),
+            {
+                0: {"A": []},
+                1: {"1": ["A"]},
+                2: {'2': ['1']},
+                3: {'3': ['2'], '4': ['2'], '5': ['2'], },
+                4: {'B': ['3', '4', '5']},
+            },
+            msg='граф с распаралелливающимися ветками, сходящимися в один узел',
+        )
+
+    def test_graph_with_cross_level_edge(self):
+        graph = Graph(
             data='''
                 digraph { 
                     A; 
@@ -49,69 +66,31 @@ class TestGraph(TestCase):
                     2; 
                     3; 
                     4; 
-                    5; 
                     B; 
-                    A -> 1; 
-                    1 -> 2;
-                    2 -> 3; 
-                    3 -> 4; 
-                    4 -> 5; 
-                    5 -> B;
                     A -> B;
-                }
-            ''',
-            title='GR_3',
-        )
-        self.graph_without_a = Graph(
-            graph_id=4,
-            data='''
-                digraph { 
-                    1; 
-                    2; 
-                    3; 
-                    4; 
-                    5; 
-                    B; 
+                    A -> 1; 
                     1 -> 2;
                     2 -> 3; 
                     3 -> 4; 
-                    4 -> 5; 
-                    5 -> B;
+                    4 -> B;
                 }
             ''',
-            title='GR_4',
         )
-        self.graph_without_b = Graph(
-            graph_id=5,
-            data='''
-                digraph { 
-                    A; 
-                    1; 
-                    2; 
-                    A -> 1; 
-                    1 -> 2;
-                }
-            ''',
-            title='GR_5',
+        self.assertEqual(
+            graph._dot_to_dict_elements(),
+            {
+                0: {"A": []},
+                1: {"1": ["A"]},
+                2: {'2': ['1']},
+                3: {'3': ['2']},
+                4: {'4': ['3']},
+                5: {'B': ['4', 'A']},
+            },
+            msg='граф со связью, протягивающейся сквозь несколько уровней',
         )
-        self.graph_with_cycle = Graph(
-            graph_id=6,
-            data='''
-                digraph { 
-                    A; 
-                    1; 
-                    2; 
-                    B;
-                    A -> 1; 
-                    1 -> 2;
-                    2 -> 1;
-                    2 -> B;
-                }
-            ''',
-            title='GR_6',
-        )
-        self.graph_with_dead_end = Graph(  # c тупиковым узлом (4)
-            graph_id=7,
+
+    def test_graph_with_dead_end(self):
+        graph = Graph(
             data='''
                 digraph { 
                     A; 
@@ -129,10 +108,122 @@ class TestGraph(TestCase):
                     5 -> B;
                 }
             ''',
-            title='GR_7',
         )
-        self.graph_with_dupl_nodes = Graph(
-            graph_id=8,
+        self.assertEqual(
+            graph._dot_to_dict_elements(),
+            {
+                0: {"A": []},
+                1: {"1": ["A"]},
+                2: {'2': ['1']},
+                3: {'3': ['2']},
+                4: {'4': ['3'], '5': ['3']},
+                5: {'B': ['5']},
+            },
+            msg='граф с тупиковой вершиной',
+        )
+
+    def test_graph_hard(self):
+        graph = Graph(
+            data='''
+                digraph { 
+                    A; 
+                    1; 
+                    2; 
+                    3; 
+                    4; 
+                    5; 
+                    6; 
+                    7; 
+                    8; 
+                    9; 
+                    10; 
+                    B; 
+                    A -> 1; 
+                    1 -> 2;
+                    1 -> 3; 
+                    2 -> 4; 
+                    2 -> 5; 
+                    3 -> 6; 
+                    3 -> 8; 
+                    4 -> 7; 
+                    5 -> 6; 
+                    6 -> 7; 
+                    6 -> 8; 
+                    7 -> B; 
+                    8 -> 9; 
+                    9 -> 10;
+                }
+            ''',
+        )
+        self.assertEqual(
+            graph._dot_to_dict_elements(),
+            {
+                0: {"A": []},
+                1: {"1": ["A"]},
+                2: {'2': ['1'], '3': ['1']},
+                3: {'4': ['2'], '5': ['2']},
+                4: {'6': ['3', '5']},
+                5: {'7': ['4', '6'], '8': ['3', '6']},
+                6: {'9': ['8']},
+                7: {'10': ['9']},
+                8: {'B': ['7']},
+            },
+            msg='сложный граф',
+        )
+
+
+class TestGraph__has_a_and_b_nodes(TestCase):
+    def test_has_a_and_b_nodes(self):
+        graph = Graph(
+            data='''
+                 digraph { 
+                     A; 
+                     1;
+                     B; 
+                     A -> 1;
+                     1 -> B;
+                 }
+             ''',
+        )
+        self.assertTrue(
+            graph._has_a_and_b_nodes(),
+            msg='имеет A и B',
+        )
+
+    def test_hasnt_a_node(self):
+        graph = Graph(
+            data='''
+                 digraph { 
+                     1;
+                     B; 
+                     1 -> B;
+                 }
+             ''',
+        )
+        self.assertFalse(
+            graph._has_a_and_b_nodes(),
+            msg='нет вершины А',
+        )
+
+    def test_hasnt_b_node(self):
+        graph = Graph(
+            data='''
+                     digraph { 
+                         A; 
+                         1;
+                         A -> 1;
+                     }
+                 ''',
+        )
+        self.assertFalse(
+            graph._has_a_and_b_nodes(),
+            msg='нет вершины В',
+        )
+
+
+class TestGraph__has_duplicate_nodes(TestCase):
+    def test_has_dupl_nodes(self):
+        graph = Graph(
             data='''
                 digraph { 
                     A; 
@@ -151,37 +242,172 @@ class TestGraph(TestCase):
                     5 -> B;
                 }
             ''',
-            title='GR_8',
+        )
+        self.assertTrue(
+            graph._has_duplicate_nodes(),
+            msg='дублируется node 4',
         )
 
-    def test_dot_to_json(self):
-        self.assertEqual(self.def_graph.dot_to_json_elements(),
-                         r'{"0": {"A": []}, "1": {"B": ["A"]}}')
-        self.assertEqual(self.graph_with_subgraphs.dot_to_json_elements(),
-                         r'{"0": {"A": []}, "1": {"2": ["A"]}, "2": {"3": ["2"], "4": ["2"], "5": ["2"]}, "3": {"1": ["3", "4", "5"]}, "4": {"B": ["1"]}}')
-        self.assertEqual(self.graph_with_cross_level_edge.dot_to_json_elements(),
-                         r'{"0": {"A": []}, "1": {"1": ["A"]}, "2": {"2": ["1"]}, "3": {"3": ["2"]}, "4": {"4": ["3"]}, "5": {"5": ["4"]}, "6": {"B": ["5", "A"]}}')
-        self.assertEqual(self.graph_with_dead_end.dot_to_json_elements(),
-                         r'{"0": {"A": []}, "1": {"1": ["A"]}, "2": {"2": ["1"]}, "3": {"3": ["2"]}, "4": {"4": ["3"], "5": ["3"]}, "5": {"B": ["5"]}}')
-        self.assertEqual(self.graph_with_dupl_nodes.dot_to_json_elements(),
-                         r'{"0": {"A": []}, "1": {"1": ["A"]}, "2": {"2": ["1"]}, "3": {"3": ["2"]}, "4": {"4": ["3"], "5": ["3"]}, "5": {"B": ["5"]}}')
+    def test_hasnt_dupl_nodes(self):
+        graph = Graph(
+            data='''
+                digraph { 
+                    A; 
+                    1; 
+                    2; 
+                    3; 
+                    4; 
+                    5; 
+                    B; 
+                    A -> 1; 
+                    1 -> 2;
+                    2 -> 3; 
+                    3 -> 4; 
+                    4 -> 5;
+                    5 -> B;
+                }
+            ''',
+        )
+        self.assertFalse(
+            graph._has_duplicate_nodes(),
+            msg='нет дублирующихся узлов',
+        )
 
 
-    def test__has_a_and_b_nodes(self):
-        self.assertTrue(self.def_graph._has_a_and_b_nodes())
-        self.assertTrue(self.graph_with_subgraphs._has_a_and_b_nodes())
-        self.assertTrue(self.graph_with_cross_level_edge._has_a_and_b_nodes())
-        self.assertTrue(self.graph_with_dead_end._has_a_and_b_nodes())
+class TestGraph__has_cycle(TestCase):
+    def test_has_cycle(self):
+        graph = Graph(
+            data='''
+                digraph { 
+                    A; 
+                    1; 
+                    2; 
+                    3; 
+                    B; 
+                    A -> 1; 
+                    1 -> 2;
+                    2 -> 3; 
+                    3 -> 1; 
+                    3 -> B;
+                }
+            ''',
+        )
+        self.assertTrue(
+            graph._has_cycle(),
+            msg='есть цикл',
+        )
 
-        self.assertFalse(self.graph_without_a._has_a_and_b_nodes())
-        self.assertFalse(self.graph_without_b._has_a_and_b_nodes())
+    def test_hasnt_cycle(self):
+        graph = Graph(
+            data='''
+                digraph { 
+                    A; 
+                    1; 
+                    2; 
+                    3; 
+                    4; 
+                    5; 
+                    B; 
+                    A -> 1; 
+                    1 -> 2;
+                    2 -> 3; 
+                    3 -> B;
+                }
+            ''',
+        )
+        self.assertFalse(
+            graph._has_cycle(),
+            msg='нет цикла',
+        )
 
-    def test__has_duplicate_nodes(self):
-        self.assertFalse(self.def_graph._has_duplicate_nodes())
-        self.assertFalse(self.graph_with_subgraphs._has_duplicate_nodes())
-        self.assertFalse(self.graph_with_cross_level_edge._has_duplicate_nodes())
-        self.assertFalse(self.graph_with_dead_end._has_duplicate_nodes())
 
-        self.assertTrue(self.graph_with_dupl_nodes._has_duplicate_nodes())
+class TestGraph__is_connected_graph(TestCase):
+    def test_is_connected(self):
+        graph = Graph(
+            data='''
+                digraph { 
+                    A; 
+                    1; 
+                    B; 
+                    A -> 1; 
+                    1 -> B;
+                }
+            ''',
+        )
+        self.assertTrue(
+            graph._is_connected_graph(),
+            msg='все вершины графа связаны',
+        )
+
+    def test_isnt_connected1(self):
+        graph = Graph(
+            data='''
+                digraph { 
+                    A; 
+                    1; 
+                    2;
+                    3;
+                    B; 
+                    A -> 1; 
+                    1 -> B;
+                    2 -> 3;
+                }
+            ''',
+        )
+        self.assertFalse(
+            graph._has_cycle(),
+            msg='есть группа отдельных вершин',
+        )
+
+    def test_isnt_connected2(self):
+        graph = Graph(
+            data='''
+                digraph { 
+                    A; 
+                    1; 
+                    2;
+                    B; 
+                    A -> 1; 
+                    1 -> B;
+                }
+            ''',
+        )
+        self.assertFalse(
+            graph._has_cycle(),
+            msg='есть единичная отдельная вершина',
+        )
 
 
+class TestGraph__all_nodes_exists(TestCase):
+    def test_all_nodes_exists(self):
+        graph = Graph(
+            data='''
+                digraph { 
+                    A; 
+                    1; 
+                    B; 
+                    A -> 1; 
+                    1 -> B;
+                }
+            ''',
+        )
+        self.assertTrue(
+            graph._is_connected_graph(),
+            msg='все вершины графа объявлены',
+        )
+
+    def test_with_not_exists_nodes(self):
+        graph = Graph(
+            data='''
+                digraph { 
+                    A; 
+                    B; 
+                    A -> 1; 
+                    1 -> B;
+                }
+            ''',
+        )
+        self.assertFalse(
+            graph._has_cycle(),
+            msg='в связях участвует не объявленная вершина',
+        )

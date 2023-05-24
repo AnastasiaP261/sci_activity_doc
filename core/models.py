@@ -7,6 +7,8 @@ from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 import re
 import pydot
+import collections
+from django.core.exceptions import ValidationError
 
 
 # Прим: ограничение max_length в типе models.TextField используется только тогда,
@@ -121,8 +123,26 @@ class Graph(models.Model):
 
     _dot = pydot.Dot  # обращаться только через геттер _get_dot! Это гарантирует актуальность данных
 
+    class Meta:
+        permissions = (
+            ("can_edit_nodes", "Can edit graph nodes"),
+            ("can_add_notes_to", "Can add notes to graph node"),
+        )
+
+    def save(
+        self, force_insert=False, force_update=False, using=None, update_fields=None
+    ):
+        self.full_clean()
+        super().save(force_insert, force_update, using, update_fields)
+
+    def full_clean(self, exclude=None, validate_unique=True, validate_constraints=True):
+        if self.valid_graph():
+            super().full_clean(exclude, validate_unique, validate_constraints)
+        else:
+            raise ValidationError
+
     def _data_to_dot(self):
-        self._dot = pydot.graph_from_dot_data(self.data.__str__())[0]
+        self._dot = pydot.graph_from_dot_data(self.data.__str__().replace('\n', ''))[0]
 
     def _dot_to_data(self):
         self.data = self._dot.to_string()
@@ -130,6 +150,52 @@ class Graph(models.Model):
     def _get_dot(self) -> pydot.Dot:
         self._data_to_dot()
         return self._dot
+
+    def _get_edges_dict(self) -> dict:
+        edges = self._get_dot().get_edges()
+
+        dict_edges = dict()
+        for e in edges:
+            if e.obj_dict['points'][0] not in dict_edges:
+                dict_edges[e.obj_dict['points'][0]] = list()
+            dict_edges[e.obj_dict['points'][0]].append(e.obj_dict)
+        self._data_to_dot()
+
+        return dict_edges
+
+    def _get_parents(self) -> dict:
+        '''
+        Возвращает словарь, в котором для каждого индекса вершины графа указаны
+        индексы родительских узлов
+        '''
+        prev = dict()
+
+        prev['A'] = set()
+        for e in self._get_dot().get_edges():
+            i = e.obj_dict['points'][1]
+            if i not in prev:
+                prev[i] = set()
+            prev[i].add(e.obj_dict['points'][0])
+        for i in prev:
+            prev[i] = sorted(list(prev[i]))
+
+        return prev
+
+    def _get_children(self) -> dict:
+        '''
+        Возвращает словарь, в котором для каждого индекса вершины графа указаны
+        индексы дочерних узлов
+        '''
+        next = dict()
+        for e in self._get_dot().get_edges():
+            i = e.obj_dict['points'][0]
+            if i not in next:
+                next[i] = set()
+            next[i].add(e.obj_dict['points'][1])
+            if e.obj_dict['points'][1] not in next:
+                next[e.obj_dict['points'][1]] = set()
+
+        return next
 
     def delete_node_from_dot(self, node_id: int):
         self._get_dot().del_node(node_id)
@@ -140,71 +206,97 @@ class Graph(models.Model):
         node_list = [i.get_name() for i in self._get_dot().get_nodes()]
         return str(node_id) in node_list
 
+    def _dot_to_dict_elements(self) -> dict:
+        dict_edges = self._get_edges_dict()
+
+        # обход в глубину, получаем уровни для всех вершин
+        edges_levels = collections.defaultdict(int)
+
+        def breadth_first_traversal(edge_index: str, level: int):
+            edges_levels[edge_index] = max(level, edges_levels[edge_index])
+            if edge_index not in dict_edges:
+                return
+            for next_edge in dict_edges[edge_index]:
+                breadth_first_traversal(next_edge['points'][1], level + 1)
+
+        # B всегда должна быть на последнем уровне
+        breadth_first_traversal('A', 0)
+        for edge, level in edges_levels.items():
+            if edge == 'B':
+                continue
+            if level >= edges_levels['B']:
+                edges_levels['B'] += 1
+
+        # список родительских вершин для каждой вершины
+        prev = self._get_parents()
+
+        # формируем итоговую структуру
+        raw_result = collections.defaultdict(dict)
+        for edge_index, edge_level in edges_levels.items():
+            raw_result[edge_level][edge_index] = prev[edge_index]
+
+        return dict(raw_result)
+
     def dot_to_json_elements(self) -> str:
-        edges = self._get_dot().get_edges()
-
-        prev = dict()
-        prev['A'] = set()
-        for e in edges:
-            i = e.obj_dict['points'][1]
-            if i not in prev:
-                prev[i] = set()
-            prev[i].add(e.obj_dict['points'][0])
-        for i in prev:
-            prev[i] = sorted(list(prev[i]))
-
-        next = dict()
-        for e in edges:
-            i = e.obj_dict['points'][0]
-            if i not in next:
-                next[i] = set()
-            next[i].add(e.obj_dict['points'][1])
-            if e.obj_dict['points'][1] not in next:
-                next[e.obj_dict['points'][1]] = set()
-        for i in next:
-            next[i] = sorted(list(next[i]))
-
-        levels = dict()
-
-        def foo(i: str, lvl_count: int):
-            if lvl_count not in levels:
-                levels[lvl_count] = dict()
-            if i not in levels[lvl_count]:
-                levels[lvl_count][i] = set()
-                levels[lvl_count][i].update(prev[i])
-            for j in next[i]:
-                foo(j, lvl_count + 1)
-
-        foo('A', 0)
-        for i in levels:
-            for j in levels[i]:
-                levels[i][j] = sorted(list(levels[i][j]))
-
-        return json.dumps(levels)
-
-    class Meta:
-        permissions = (
-            ("can_edit_nodes", "Can edit graph nodes"),
-            ("can_add_notes_to", "Can add notes to graph node"),
-        )
-
-    def __str__(self) -> str:
-        return f'({self.graph_id.__str__()}) {self.title.__str__()}'
+        return json.dumps(self._dot_to_dict_elements())
 
     def valid_graph(self) -> bool:
         if not self._has_a_and_b_nodes():
-            raise f'the graph <graph_id:{self.graph_id}> doesnt have nodes A or B'
+            return False
 
         if self._has_cycle():
-            raise f'the graph <graph_id:{self.graph_id}> have a cycle'
+            return False
+
+        if self._has_duplicate_nodes():
+            return False
+
+        if not self._is_connected_graph():
+            return False
+
+        if not self._all_nodes_exists():
+            return False
 
         return True
+
+    class CycleDetectedError(Exception):
+        """
+        Найден цикл
+        """
+
+        def __init__(self, graph_id: int):
+            self.graph_id = graph_id
+            self.message = f"Graph {self.graph_id} has cycle"
+            super().__init__(self.message)
 
     def _has_a_and_b_nodes(self) -> bool:
         return self.node_with_node_id_exists('A') and self.node_with_node_id_exists('B')
 
     def _has_cycle(self) -> bool:
-        edges = self._get_dot().get_edges()
+        # список дочерних вершин для каждой вершины
+        next = self._get_children()
+
+        # используем алгоритм обхода в глубину для поиска цикла
+        # см https://neerc.ifmo.ru/wiki/index.php?title=%D0%98%D1%81%D0%BF%D0%BE%D0%BB%D1%8C%D0%B7%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B5_%D0%BE%D0%B1%D1%85%D0%BE%D0%B4%D0%B0_%D0%B2_%D0%B3%D0%BB%D1%83%D0%B1%D0%B8%D0%BD%D1%83_%D0%B4%D0%BB%D1%8F_%D0%BF%D0%BE%D0%B8%D1%81%D0%BA%D0%B0_%D1%86%D0%B8%D0%BA%D0%BB%D0%B0
+        WHITE = 'w'
+        GRAY = 'g'
+        BLACK = 'b'
+        color = {i: WHITE for i in next}
+
+        def breadth_first_traversal(edge_index: str):
+            color[edge_index] = GRAY
+
+            for next_index in next[edge_index]:
+                if color[next_index] == WHITE:
+                    breadth_first_traversal(next_index)
+                if color[next_index] == GRAY:
+                    raise self.CycleDetectedError(graph_id=self.graph_id)
+
+            color[edge_index] = BLACK
+
+        try:
+            breadth_first_traversal('A')
+        except self.CycleDetectedError:
+            return True
 
         return False
 
@@ -219,8 +311,38 @@ class Graph(models.Model):
 
         return len(nodes_set) != len(nodes_list)
 
+    def _is_connected_graph(self) -> bool:
+        # список дочерних вершин для каждой вершины
+        next = self._get_children()
 
+        set_of_nodes = set()
 
+        def breadth_first_traversal(edge_index: str):
+            set_of_nodes.add(edge_index)
+            for next_index in next[edge_index]:
+                breadth_first_traversal(next_index)
+
+        breadth_first_traversal('A')
+
+        return len(set_of_nodes) == len(next)
+
+    def _all_nodes_exists(self) -> bool:
+        # список дочерних вершин для каждой вершины
+        next = self._get_children()
+
+        set_of_nodes = set()
+
+        def breadth_first_traversal(edge_index: str):
+            set_of_nodes.add(edge_index)
+            for next_index in next[edge_index]:
+                breadth_first_traversal(next_index)
+
+        breadth_first_traversal('A')
+
+        return len(set_of_nodes) == len(next)
+
+    def __str__(self) -> str:
+        return f'({self.graph_id.__str__()}) {self.title.__str__()}'
 
 
 class Note(models.Model):
