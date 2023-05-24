@@ -119,7 +119,7 @@ class Graph(models.Model):
 
     research_id = models.ForeignKey(Research, on_delete=models.CASCADE, blank=False)
 
-    _dot = pydot.Dot
+    _dot = pydot.Dot  # обращаться только через геттер _get_dot! Это гарантирует актуальность данных
 
     def _data_to_dot(self):
         self._dot = pydot.graph_from_dot_data(self.data.__str__())[0]
@@ -127,20 +127,21 @@ class Graph(models.Model):
     def _dot_to_data(self):
         self.data = self._dot.to_string()
 
-    def delete_node_from_dot(self, node_id: int):
+    def _get_dot(self) -> pydot.Dot:
         self._data_to_dot()
-        self._dot.del_node(node_id)
+        return self._dot
+
+    def delete_node_from_dot(self, node_id: int):
+        self._get_dot().del_node(node_id)
         self._dot_to_data()
         super().save()
 
-    def node_with_node_id_exists(self, node_id: int) -> bool:
-        self._data_to_dot()
-        node_list = [i.get_name() for i in self._dot.get_nodes()]
+    def node_with_node_id_exists(self, node_id: str) -> bool:
+        node_list = [i.get_name() for i in self._get_dot().get_nodes()]
         return str(node_id) in node_list
 
     def dot_to_json_elements(self) -> str:
-        self._data_to_dot()
-        edges = self._dot.get_edges()
+        edges = self._get_dot().get_edges()
 
         prev = dict()
         prev['A'] = set()
@@ -152,36 +153,74 @@ class Graph(models.Model):
         for i in prev:
             prev[i] = sorted(list(prev[i]))
 
+        next = dict()
+        for e in edges:
+            i = e.obj_dict['points'][0]
+            if i not in next:
+                next[i] = set()
+            next[i].add(e.obj_dict['points'][1])
+            if e.obj_dict['points'][1] not in next:
+                next[e.obj_dict['points'][1]] = set()
+        for i in next:
+            next[i] = sorted(list(next[i]))
+
         levels = dict()
 
         def foo(i: str, lvl_count: int):
             if lvl_count not in levels:
                 levels[lvl_count] = dict()
-            for j in prev[i]:
-                if i not in levels[lvl_count]:
-                    levels[lvl_count][i] = set()
-                levels[lvl_count][i].add(j)
-                if j != 'A':
-                    foo(j, lvl_count + 1)
+            if i not in levels[lvl_count]:
+                levels[lvl_count][i] = set()
+                levels[lvl_count][i].update(prev[i])
+            for j in next[i]:
+                foo(j, lvl_count + 1)
 
-        foo('B', 0)
-        levels[len(levels)] = {'A': set()}
-        for i in range(len(levels) // 2):
-            levels[len(levels) - 1 - i], levels[i] = levels[i], levels[len(levels) - 1 - i]
+        foo('A', 0)
         for i in levels:
             for j in levels[i]:
                 levels[i][j] = sorted(list(levels[i][j]))
 
         return json.dumps(levels)
 
-        class Meta:
-            permissions = (
-                ("can_edit_nodes", "Can edit graph nodes"),
-                ("can_add_notes_to", "Can add notes to graph node"),
-            )
+    class Meta:
+        permissions = (
+            ("can_edit_nodes", "Can edit graph nodes"),
+            ("can_add_notes_to", "Can add notes to graph node"),
+        )
 
-        def __str__(self) -> str:
-            return f'({self.graph_id.__str__()}) {self.title.__str__()}'
+    def __str__(self) -> str:
+        return f'({self.graph_id.__str__()}) {self.title.__str__()}'
+
+    def valid_graph(self) -> bool:
+        if not self._has_a_and_b_nodes():
+            raise f'the graph <graph_id:{self.graph_id}> doesnt have nodes A or B'
+
+        if self._has_cycle():
+            raise f'the graph <graph_id:{self.graph_id}> have a cycle'
+
+        return True
+
+    def _has_a_and_b_nodes(self) -> bool:
+        return self.node_with_node_id_exists('A') and self.node_with_node_id_exists('B')
+
+    def _has_cycle(self) -> bool:
+        edges = self._get_dot().get_edges()
+
+        return False
+
+    def _has_duplicate_nodes(self) -> bool:
+        nodes = self._get_dot().get_nodes()
+        print(nodes)
+
+        nodes_list = list()
+        for n in nodes:
+            nodes_list.append(n.obj_dict['name'])
+        nodes_set = set(nodes_list)
+
+        return len(nodes_set) != len(nodes_list)
+
+
+
 
 
 class Note(models.Model):
