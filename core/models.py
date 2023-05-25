@@ -164,10 +164,10 @@ class Graph(models.Model):
         return dict_edges
 
     def _get_parents(self) -> dict:
-        '''
+        """
         Возвращает словарь, в котором для каждого индекса вершины графа указаны
         индексы родительских узлов
-        '''
+        """
         prev = dict()
 
         prev['A'] = set()
@@ -182,10 +182,10 @@ class Graph(models.Model):
         return prev
 
     def _get_children(self) -> dict:
-        '''
+        """
         Возвращает словарь, в котором для каждого индекса вершины графа указаны
         индексы дочерних узлов
-        '''
+        """
         next = dict()
         for e in self._get_dot().get_edges():
             i = e.obj_dict['points'][0]
@@ -198,15 +198,53 @@ class Graph(models.Model):
         return next
 
     def delete_node_from_dot(self, node_id: int):
+        """
+        Удаляет узел с переданным айди из графа
+        """
         self._get_dot().del_node(node_id)
         self._dot_to_data()
         super().save()
 
     def node_with_node_id_exists(self, node_id: str) -> bool:
+        """
+        Проверяет, что в графе существует узел с переданным айди
+        """
         node_list = [i.get_name() for i in self._get_dot().get_nodes()]
         return str(node_id) in node_list
 
     def _dot_to_dict_elements(self) -> dict:
+        """
+        Приводит к следующему виду:
+        {
+            <номер_уровня: int>: {
+                <айди_узла: str>: [
+                    <айди_родительского_узла: str>,
+                     ...,
+                ],
+                ...,
+            },
+            ...,
+        }
+
+        Где уровень -- это глубина отдаления вершины от начальной(А).
+        Например, граф
+
+            A -> 1 -> 2 -> 4 -> B
+                 └--> 3 __⤴
+
+        будет разделен на уровни:
+
+         |    |    |    |    |    |
+            A -> 1 -> 2 -> 4 -> B
+                 └--> 3 __⤴
+         |    |    |    |    |    |
+         | 0  | 1  | 2  | 3  | 5  |
+
+        где узел А окажется на уровне 0, узел 1 на уровне 2,
+        узлы 2 и 3 на уровне 2,
+        а узлы 4 и B на уровнях 3 и 5 соответсвенно.
+        """
+
         dict_edges = self._get_edges_dict()
 
         # обход в глубину, получаем уровни для всех вершин
