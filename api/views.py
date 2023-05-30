@@ -5,7 +5,7 @@ from rest_framework import generics
 from rest_framework.pagination import PageNumberPagination
 from django.http import Http404
 from . import serializers
-from core.models import User, Note, NodesNotesRelation, Graph
+from core.models import User, Note, NodesNotesRelation, Graph, Research
 from rest_framework import permissions, generics, mixins, status
 from rest_framework.response import Response
 from django.db.models.signals import post_delete, pre_delete, post_save, pre_save, post_init, pre_init
@@ -26,15 +26,32 @@ class StandardResultsSetPagination(PageNumberPagination):
 
 class ResearcherList(generics.ListAPIView):
     """
-    Список исследователей, отсортированных по ФИО. В конце списка будут присутствовать "архивные" пользователи.
+    Список исследователей, отсортированных по ФИО.
+    В конце списка будут присутствовать "архивные" пользователи.
     """
     serializer_class = serializers.CustomUserSerializer
     pagination_class = StandardResultsSetPagination
-    permission_classes = [permissions.IsAuthenticated]
-    queryset = User.objects.filter(is_superuser=False).order_by('-is_active', 'last_name', 'first_name', 'surname')
+    # permission_classes = [permissions.IsAuthenticated] TODO: включи
+
+    def get_queryset(self):
+        try:
+            if 'rsrch_id' in self.request.query_params:
+                rsrch_id = int(self.request.query_params['rsrch_id'])
+                queryset = User.objects. \
+                    filter(is_superuser=False, research=rsrch_id). \
+                    order_by('-is_active', 'last_name', 'first_name', 'surname')
+                return queryset
+
+            queryset = User.objects.\
+                filter(is_superuser=False). \
+                order_by('-is_active', 'last_name', 'first_name', 'surname')
+            return queryset
+
+        except Note.DoesNotExist:
+            raise Http404
 
 
-class UserDetail(generics.ListAPIView):
+class UserDetail(generics.RetrieveAPIView):
     """
     Текущий пользователь
     """
@@ -42,8 +59,8 @@ class UserDetail(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     lookup_field = 'username'
 
-    def get_queryset(self):
-        return User.objects.filter(username=self.request.user.get_username())
+    def get_object(self):
+        return User.objects.get(username=self.request.user.get_username())
 
 
 class NoteDetail(generics.GenericAPIView,
