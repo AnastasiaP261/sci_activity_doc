@@ -130,3 +130,6 @@ class GraphNameSerializer(serializers.ModelSerializer):
         model = Graph
         lookup_field = 'graph_id'
         fields = ['graph_id', 'title']
+
+class NodeWithNotesSerializer(serializers.Serializer):
+    notes = serializers.ListField(child=NoteWithAuthorInfoSerializer(allow_null=False))

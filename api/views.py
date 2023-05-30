@@ -270,3 +270,19 @@ class GraphDetail(generics.GenericAPIView,
         instance = self.get_object()
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class NodeDetail(generics.ListAPIView):
+    # permission_classes = [permissions.IsAuthenticated] TODO: включи
+    serializer_class = serializers.NoteWithAuthorInfoSerializer
+
+    def get_queryset(self):
+        try:
+            graph_id = int(self.kwargs.get('graph_id'))
+            node_id = self.kwargs.get('node_id')
+
+            obj = NodesNotesRelation.objects.filter(graph_id=graph_id, node_id=node_id).prefetch_related(
+                'note_id').order_by('note_id__created_at')
+            return obj
+        except Note.DoesNotExist:
+            raise Http404
