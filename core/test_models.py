@@ -463,26 +463,9 @@ class TestGraph__rewrite_graph_schema(TestCase):
             '1': {"1": ["A"]},
             '2': {"B": ["1"]},
         }
-        new_metadata = {
-            '1': {
-                "is_subgraph": False,
-                "subgraph_graph_id": 0,
-                "notes_ids": []
-            },
-            'A': {
-                "is_subgraph": False,
-                "subgraph_graph_id": 0,
-                "notes_ids": []
-            },
-            'B': {
-                "is_subgraph": False,
-                "subgraph_graph_id": 0,
-                "notes_ids": []
-            },
-        }
 
         self.assertEqual(
-            graph._rewrite_graph_schema(new_levels, new_metadata).to_string(),
+            graph._rewrite_graph_schema(new_levels).to_string(),
             '''digraph G {\nA;\n1;\nA -> 1;\nB;\n1 -> B;\n}\n''',
             msg='добавление узла между узлами'
         )
@@ -502,26 +485,9 @@ class TestGraph__rewrite_graph_schema(TestCase):
             '1': {"1": ["A"]},
             '2': {"B": ["A"]},
         }
-        new_metadata = {
-            '1': {
-                "is_subgraph": False,
-                "subgraph_graph_id": 0,
-                "notes_ids": []
-            },
-            'A': {
-                "is_subgraph": False,
-                "subgraph_graph_id": 0,
-                "notes_ids": []
-            },
-            'B': {
-                "is_subgraph": False,
-                "subgraph_graph_id": 0,
-                "notes_ids": []
-            },
-        }
 
         self.assertEqual(
-            graph._rewrite_graph_schema(new_levels, new_metadata).to_string(),
+            graph._rewrite_graph_schema(new_levels).to_string(),
             '''digraph G {\nA;\n1;\nA -> 1;\nB;\nA -> B;\n}\n''',
             msg='добавление тупикового узла',
         )
@@ -542,7 +508,7 @@ class TestGraph__rewrite_node_metadata(TestCase):
         )
 
         self.assertEqual(
-            graph._rewrite_node_metadata('1', {'is_subgraph': True, 'subgraph_graph_id': 345}),
+            graph._rewrite_node_metadata('1', {'is_subgraph': True, 'subgraph_graph_id': 345,'notes_ids': []}),
             {'subgraph': 345},
             msg='изменение айди подграфа'
         )
@@ -561,7 +527,7 @@ class TestGraph__rewrite_node_metadata(TestCase):
         )
 
         self.assertEqual(
-            graph._rewrite_node_metadata('1', {'is_subgraph': True, 'subgraph_graph_id': 123}, []),
+            graph._rewrite_node_metadata('1', {'is_subgraph': True, 'subgraph_graph_id': 123,'notes_ids': []}),
             {'subgraph': 123},
             msg='успешное изменение типа узла на "подграф"'
         )
@@ -582,8 +548,7 @@ class TestGraph__rewrite_node_metadata(TestCase):
         with self.assertRaises(
                 expected_exception=BadRequest,
                 msg='нельзя изменить тип узла на "подграф", если к узлу привязаны заметки'):
-            graph._rewrite_node_metadata('1', {'is_subgraph': True, 'subgraph_graph_id': 123}, [1, 2])
-
+            graph._rewrite_node_metadata('1', {'is_subgraph': True, 'subgraph_graph_id': 123, 'notes_ids': [1, 2]},)
 
     def test_edit_node_title(self):
         graph = Graph(
@@ -600,7 +565,7 @@ class TestGraph__rewrite_node_metadata(TestCase):
 
         self.assertEqual(
             graph._rewrite_node_metadata('1', {'title': 'New title', 'is_subgraph': False}),
-            {'title':'New_title'},
+            {'title': 'New_title'},
             msg='изменение название узла'
         )
 
@@ -619,6 +584,40 @@ class TestGraph__rewrite_node_metadata(TestCase):
 
         self.assertEqual(
             graph._rewrite_node_metadata('1', {'title': 'New title', 'is_subgraph': False}),
-            {'title':'New_title'},
+            {'title': 'New_title'},
             msg='установка названия узла'
+        )
+
+
+class TestGraph__delete_node_from_dot(TestCase):
+    """
+    ↘ → ↗ - связи в графе
+    ◯ - вершина графа
+    ⊗ - удаляемая вершина графа
+    ➤ - результирующий вид графа после удаления
+    """
+
+    def test_ok(self):
+        """
+        → ◯ → ⊗ → ◯    ➤   → ◯ → ◯
+        """
+
+        graph = Graph(
+            data='''
+                digraph { 
+                    A; 
+                    1;
+                    B; 
+                    A -> 1; 
+                    1 -> B; 
+                }
+            ''',
+        )
+
+        graph._delete_node_from_dot("1")
+
+        self.assertEqual(
+            graph.data,
+            'digraph G {\nA;\nB;\nA -> B;\n}\n',
+            msg="удаление узла с одним ребенком и одним родителем"
         )

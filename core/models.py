@@ -151,7 +151,7 @@ class Graph(models.Model):
         if self.valid_graph():
             super().full_clean(exclude, validate_unique, validate_constraints)
         else:
-            raise ValidationError
+            raise ValidationError()
 
     def _clean_data(self):
         """
@@ -247,30 +247,43 @@ class Graph(models.Model):
 
         return next
 
-    def delete_node_from_dot(self, node_id: int):  # TODO: need tests, добавить проверку что нет
+    def _delete_node_from_dot(self, node_id: str):
         """
         Удаляет узел с переданным айди из графа и переподвязывает связанные с ним вершины
         """
+        self._data_to_dot()
+        dot = self._dot
+
         if node_id in ('A', 'B'):
-            raise BadRequest
+            raise BadRequest()
 
         parents_dict = self._get_parents()
         parents_ids = list()
         if node_id in parents_dict:
             parents_ids = parents_dict[node_id]
+        else:
+            raise BadRequest()  # значит в графе нет узла с таким id
 
         children_dict = self._get_children()
         children_ids = list()
         if node_id in children_dict:
             children_ids = children_dict[node_id]
 
-        self._get_dot().del_node(node_id)
+        dot.del_node(node_id)
+
+        for i, edge in enumerate(dot.get_edges()):
+            if node_id in edge.obj_dict['points']:
+                dot.del_edge(edge.obj_dict['points'][0], edge.obj_dict['points'][1])
 
         for p in parents_ids:
             for ch in children_ids:
-                self._dot.add_edge(pydot.Edge(src=p, dst=ch))
+                dot.add_edge(pydot.Edge(src=p, dst=ch))
 
+        self._dot = dot
         self._dot_to_data()
+
+    def delete_node_from_dot(self, node_id: str):  # TODO: need tests, добавить проверку что нет
+        self._delete_node_from_dot(node_id)
         super().save()
 
     def _rewrite_graph_schema(self, levels: dict) -> pydot.Dot:
@@ -319,7 +332,7 @@ class Graph(models.Model):
 
             if len(new_matadata[
                        'notes_ids']) != 0:  # нельзя переопределить узел как подграф, пока к нему привязаны заметки
-                raise BadRequest
+                raise BadRequest()
 
             return edit('subgraph', new_matadata['subgraph_graph_id'])
 
@@ -329,7 +342,7 @@ class Graph(models.Model):
             return edit('title', new_matadata['title'].replace(' ', '_'))
 
         else:
-            raise BadRequest
+            raise BadRequest()
 
     def rewrite_node_metadata(self, node_id: str, req_matadata: dict):
         new_matadata = self._rewrite_node_metadata(node_id, req_matadata)

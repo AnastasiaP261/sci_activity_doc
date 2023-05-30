@@ -10,7 +10,7 @@ from rest_framework import permissions, generics, mixins, status
 from rest_framework.response import Response
 from django.db.models.signals import post_delete, pre_delete, post_save, pre_save, post_init, pre_init
 from django.dispatch import receiver
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, BadRequest
 from django.db import transaction
 
 
@@ -242,25 +242,26 @@ class GraphDetail(generics.GenericAPIView,
 
         graph = self.update_get_object(request.data['graph_id'])
 
-        serialized = ''
         if update_type == 'update_name':
             serialized = serializers.GraphNameSerializer(graph, data=request.data, partial=True)
             serialized.is_valid(raise_exception=True)
-            super().perform_update(serialized)
 
         elif update_type == 'update_levels':
             serialized = serializers.GraphLevelsSerializer(graph, data=request.data, partial=True)
             serialized.is_valid(raise_exception=True)
 
             serialized.instance.rewrite_graph_schema(request.data['levels'])
-            super().perform_update(serialized)
 
         elif update_type == 'update_metadata':
             serialized = serializers.GraphMetadataSerializer(graph, data=request.data, partial=True)
             serialized.is_valid(raise_exception=True)
 
             serialized.instance.rewrite_node_metadata(request.data['node_id'], request.data['node_metadata'])
-            super().perform_update(serialized)
+
+        else:
+            raise BadRequest
+
+        super().perform_update(serialized)
 
         if getattr(graph, '_prefetched_objects_cache', None):
             # If 'prefetch_related' has been applied to a queryset, we need to
@@ -272,6 +273,9 @@ class GraphDetail(generics.GenericAPIView,
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
+
+    def destroy(self, request, *args, **kwargs):
+        pass
 
 '''
 digraph { 
@@ -294,5 +298,4 @@ A -> 2;
 '''
 
 
-def destroy(self, request, *args, **kwargs):
-    pass
+
