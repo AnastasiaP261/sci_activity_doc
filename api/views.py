@@ -272,6 +272,10 @@ class GraphDetail(generics.GenericAPIView,
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class CreateGraph(generics.CreateAPIView):
+    serializer_class = serializers.GraphSerializer
+
+
 class NodeDetail(generics.ListAPIView):
     # permission_classes = [permissions.IsAuthenticated] TODO: включи
     serializer_class = serializers.NoteWithAuthorInfoSerializer

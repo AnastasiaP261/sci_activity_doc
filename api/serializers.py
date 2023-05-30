@@ -70,7 +70,7 @@ class NodesNotesRelationSerializer(serializers.ModelSerializer):
 class GraphSerializer(serializers.HyperlinkedModelSerializer):
     research_id = serializers.IntegerField(min_value=1, allow_null=False, source='research_id_id')
 
-    raw_data = serializers.CharField(allow_null=False, allow_blank=False, source='data')
+    raw_data = serializers.CharField(allow_null=False, allow_blank=False, source='data', read_only=True)
 
     levels = serializers.JSONField(read_only=True, source='dot_to_json_levels')
     nodes_metadata = serializers.JSONField(read_only=True, source='get_nodes_metadata_json')
@@ -80,6 +80,11 @@ class GraphSerializer(serializers.HyperlinkedModelSerializer):
         lookup_field = 'graph_id'
         fields = ['graph_id', 'title', 'research_id', 'raw_data', 'levels', 'nodes_metadata']
 
+        extra_kwargs = {
+            'graph_id': {
+                'read_only': True,
+            },
+        }
 
 class GraphLevelsSerializer(serializers.ModelSerializer):
     levels = serializers.JSONField(allow_null=False, read_only=True, source='dot_to_json_levels')
@@ -130,6 +135,3 @@ class GraphNameSerializer(serializers.ModelSerializer):
         model = Graph
         lookup_field = 'graph_id'
         fields = ['graph_id', 'title']
-
-class NodeWithNotesSerializer(serializers.Serializer):
-    notes = serializers.ListField(child=NoteWithAuthorInfoSerializer(allow_null=False))
