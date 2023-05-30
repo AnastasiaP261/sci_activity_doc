@@ -8,7 +8,7 @@ from django.utils import timezone
 import re
 import pydot
 import collections
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, BadRequest, ObjectDoesNotExist
 
 
 # Прим: ограничение max_length в типе models.TextField используется только тогда,
@@ -110,13 +110,16 @@ class Research(models.Model):
         return f'({self.rsrch_id}) {self.title.__str__()}'
 
 
+DEFAULT_GRAPH = 'digraph{A;B;A->B;}'
+
+
 class Graph(models.Model):
     """
     Граф TODO: дописать в соответствии с определением из курсача
     """
 
     graph_id = models.AutoField(verbose_name="graph_id", primary_key=True)
-    data = models.TextField(verbose_name="data", blank=True)
+    data = models.TextField(verbose_name="data", blank=False, default=DEFAULT_GRAPH)
     title = models.CharField(verbose_name="title", max_length=200, blank=False)
 
     research_id = models.ForeignKey(Research, on_delete=models.CASCADE, blank=False)
@@ -129,29 +132,65 @@ class Graph(models.Model):
             ("can_add_notes_to", "Can add notes to graph node"),
         )
 
+    # ПЕРЕОПРЕДЕЛЕННЫЕ МЕТОДЫ
+
     def save(
-        self, force_insert=False, force_update=False, using=None, update_fields=None
+            self, force_insert=False, force_update=False, using=None, update_fields=None
     ):
+        """
+        Переопределение метода safe
+        """
         self.full_clean()
         super().save(force_insert, force_update, using, update_fields)
 
     def full_clean(self, exclude=None, validate_unique=True, validate_constraints=True):
+        """
+        Переопределение метода full_clean
+        """
+        self._clean_data()
         if self.valid_graph():
             super().full_clean(exclude, validate_unique, validate_constraints)
         else:
             raise ValidationError
 
+    def _clean_data(self):
+        """
+        Очищает входящий текст от лишних пробельных символов
+        """
+        self.data = re.sub(r'\s', '', self.data.__str__())
+
+    def __str__(self) -> str:
+        return f'({self.graph_id.__str__()}) {self.title.__str__()}'
+
+    # МЕТОДЫ DOT
+
     def _data_to_dot(self):
-        self._dot = pydot.graph_from_dot_data(self.data.__str__().replace('\n', ''))[0]
+        """
+        Записывает очищенный текст в переменную класса в формате pydot
+        """
+        self._clean_data()
+        self._dot = pydot.graph_from_dot_data(self.data)[0]
 
     def _dot_to_data(self):
+        """
+        Записывает данные из dot в текстовый формат
+        """
         self.data = self._dot.to_string()
 
     def _get_dot(self) -> pydot.Dot:
+        """
+        Геттер для данных в формате dot
+        """
         self._data_to_dot()
         return self._dot
 
+    # МЕТОДЫ СВЯЗЕЙ
+
     def _get_edges_dict(self) -> dict:
+        """
+        Возвращает связи в графе в формате словаря,
+        где ключ - айди узла, из которого идет грань
+        """
         edges = self._get_dot().get_edges()
 
         dict_edges = dict()
@@ -159,9 +198,20 @@ class Graph(models.Model):
             if e.obj_dict['points'][0] not in dict_edges:
                 dict_edges[e.obj_dict['points'][0]] = list()
             dict_edges[e.obj_dict['points'][0]].append(e.obj_dict)
-        self._data_to_dot()
 
         return dict_edges
+
+    # МЕТОДЫ УЗЛОВ
+
+    def _get_nodes_dict(self) -> dict:
+        """
+        Возвращает узлы в графе в формате словаря,
+        где ключ - айди узла
+        """
+        nodes = self._get_dot().get_nodes()
+        node_dict = {n.get_name(): n for n in nodes}
+
+        return node_dict
 
     def _get_parents(self) -> dict:
         """
@@ -197,22 +247,121 @@ class Graph(models.Model):
 
         return next
 
-    def delete_node_from_dot(self, node_id: int):
+    def delete_node_from_dot(self, node_id: int):  # TODO: need tests, добавить проверку что нет
         """
-        Удаляет узел с переданным айди из графа
+        Удаляет узел с переданным айди из графа и переподвязывает связанные с ним вершины
         """
+        if node_id in ('A', 'B'):
+            raise BadRequest
+
+        parents_dict = self._get_parents()
+        parents_ids = list()
+        if node_id in parents_dict:
+            parents_ids = parents_dict[node_id]
+
+        children_dict = self._get_children()
+        children_ids = list()
+        if node_id in children_dict:
+            children_ids = children_dict[node_id]
+
         self._get_dot().del_node(node_id)
+
+        for p in parents_ids:
+            for ch in children_ids:
+                self._dot.add_edge(pydot.Edge(src=p, dst=ch))
+
         self._dot_to_data()
         super().save()
 
-    def node_with_node_id_exists(self, node_id: str) -> bool:
+    def _rewrite_graph_schema(self, levels: dict) -> pydot.Dot:
+        """
+        Удаляет узел с переданным айди из графа
+        """
+
+        new_dot = pydot.graph_from_dot_data('digraph{}')[0]
+        node_list = [i.get_name() for i in new_dot.get_nodes()]
+
+        for _, nodes in levels.items():
+            for node_id, prevs in nodes.items():
+                if node_id not in node_list:
+                    new_dot.add_node(pydot.Node(node_id))
+                    node_list.append(node_id)
+                for prev_node_id in prevs:
+                    if prev_node_id not in node_list:
+                        new_dot.add_node(pydot.Node(prev_node_id))
+                        node_list.append(prev_node_id)
+                    new_dot.add_edge(pydot.Edge(src=prev_node_id, dst=node_id))
+
+        return new_dot
+
+    def rewrite_graph_schema(self, levels: dict):
+        new_dot = self._rewrite_graph_schema(levels)
+        self.data = new_dot.to_string()
+        self._data_to_dot()
+
+    def _rewrite_node_metadata(self, node_id: str, new_matadata: dict) -> dict:
+        old_metadata = self._get_nodes_dict()[node_id].obj_dict['attributes']
+
+        def edit(key: str, new_val: str) -> dict:
+            old_metadata[key] = new_val
+            return old_metadata
+
+        # если узел уже был подграфом и ему меняют айди
+        if 'subgraph' in old_metadata and \
+                new_matadata['is_subgraph'] == True and \
+                new_matadata['subgraph_graph_id'] != old_metadata['subgraph']:
+
+            return edit('subgraph', new_matadata['subgraph_graph_id'])
+
+        # если узел не был подграфом и его делают подграфом
+        elif 'subgraph' not in old_metadata and \
+                new_matadata['is_subgraph'] == True:
+
+            if len(new_matadata[
+                       'notes_ids']) != 0:  # нельзя переопределить узел как подграф, пока к нему привязаны заметки
+                raise BadRequest
+
+            return edit('subgraph', new_matadata['subgraph_graph_id'])
+
+        elif 'title' not in old_metadata or \
+                old_metadata['title'] != new_matadata['title']:
+
+            return edit('title', new_matadata['title'].replace(' ', '_'))
+
+        else:
+            raise BadRequest
+
+    def rewrite_node_metadata(self, node_id: str, req_matadata: dict):
+        new_matadata = self._rewrite_node_metadata(node_id, req_matadata)
+        for i, node in enumerate(self._get_dot().get_nodes()):
+            if node.get_name() == node_id:
+                self._get_dot().get_nodes()[i].obj_dict['attributes'] = new_matadata
+
+        self._dot_to_data()
+
+    def node_with_node_id_exists(self, node_id: str) -> bool:  # TODO: need tests
         """
         Проверяет, что в графе существует узел с переданным айди
         """
         node_list = [i.get_name() for i in self._get_dot().get_nodes()]
         return str(node_id) in node_list
 
-    def _dot_to_dict_elements(self) -> dict:
+    def _get_nodes_metadata_dict(self) -> dict:
+        nodes = self._get_dot().get_nodes()
+
+        metadata = dict()
+        for node in nodes:
+            attrs = node.obj_dict['attributes']
+            if 'subgraph' in attrs:
+                attrs['subgraph'] = int(attrs['subgraph'])
+            metadata[node.obj_dict['name']] = attrs
+
+        return metadata
+
+    def get_nodes_metadata_json(self) -> str:
+        return json.dumps(self._get_nodes_metadata_dict())
+
+    def _dot_to_dict_levels(self) -> dict:
         """
         Приводит к следующему виду:
         {
@@ -275,8 +424,10 @@ class Graph(models.Model):
 
         return dict(raw_result)
 
-    def dot_to_json_elements(self) -> str:
-        return json.dumps(self._dot_to_dict_elements())
+    def dot_to_json_levels(self) -> str:
+        return json.dumps(self._dot_to_dict_levels())
+
+    # ВАЛИДАТОРЫ
 
     def valid_graph(self) -> bool:
         if not self._has_a_and_b_nodes():
@@ -340,7 +491,6 @@ class Graph(models.Model):
 
     def _has_duplicate_nodes(self) -> bool:
         nodes = self._get_dot().get_nodes()
-        print(nodes)
 
         nodes_list = list()
         for n in nodes:
@@ -378,9 +528,6 @@ class Graph(models.Model):
         breadth_first_traversal('A')
 
         return len(set_of_nodes) == len(next)
-
-    def __str__(self) -> str:
-        return f'({self.graph_id.__str__()}) {self.title.__str__()}'
 
 
 class Note(models.Model):

@@ -1,9 +1,13 @@
 import collections
 from unittest import TestCase
+from django.core.exceptions import ValidationError, BadRequest, ObjectDoesNotExist
+
+import pydot
+
 from .models import Graph
 
 
-class TestGraph__dot_to_dict_elements(TestCase):
+class TestGraph__dot_to_dict_levels(TestCase):
     def test_default_graph(self):
         graph = Graph(
             data='''
@@ -15,7 +19,7 @@ class TestGraph__dot_to_dict_elements(TestCase):
              ''',
         )
         self.assertEqual(
-            graph._dot_to_dict_elements(),
+            graph._dot_to_dict_levels(),
             {
                 0: {"A": []},
                 1: {"B": ["A"]}
@@ -46,7 +50,7 @@ class TestGraph__dot_to_dict_elements(TestCase):
                 ''',
         )
         self.assertEqual(
-            graph._dot_to_dict_elements(),
+            graph._dot_to_dict_levels(),
             {
                 0: {"A": []},
                 1: {"1": ["A"]},
@@ -77,7 +81,7 @@ class TestGraph__dot_to_dict_elements(TestCase):
             ''',
         )
         self.assertEqual(
-            graph._dot_to_dict_elements(),
+            graph._dot_to_dict_levels(),
             {
                 0: {"A": []},
                 1: {"1": ["A"]},
@@ -110,7 +114,7 @@ class TestGraph__dot_to_dict_elements(TestCase):
             ''',
         )
         self.assertEqual(
-            graph._dot_to_dict_elements(),
+            graph._dot_to_dict_levels(),
             {
                 0: {"A": []},
                 1: {"1": ["A"]},
@@ -156,7 +160,7 @@ class TestGraph__dot_to_dict_elements(TestCase):
             ''',
         )
         self.assertEqual(
-            graph._dot_to_dict_elements(),
+            graph._dot_to_dict_levels(),
             {
                 0: {"A": []},
                 1: {"1": ["A"]},
@@ -410,4 +414,211 @@ class TestGraph__all_nodes_exists(TestCase):
         self.assertFalse(
             graph._has_cycle(),
             msg='в связях участвует не объявленная вершина',
+        )
+
+
+class TestGraph__get_nodes_metadata(TestCase):
+    def test_ok(self):
+        graph = Graph(
+            data='''
+                digraph { 
+                    A ; 
+                    1 [subgraph=123, title=Cool_node]; 
+                    2 ; 
+                    3 []; 
+                    B; 
+                    A -> 1; 
+                    1 -> 2; 
+                    2 -> 3; 
+                    3 -> B;
+                }
+            ''',
+        )
+        self.assertDictEqual(
+            graph._get_nodes_metadata_dict(),
+            {
+                'A': {},
+                '1': {'subgraph': 123, 'title': 'Cool_node'},
+                '2': {},
+                '3': {},
+                'B': {},
+            },
+            msg='получение метаданных узлов',
+        )
+
+
+class TestGraph__rewrite_graph_schema(TestCase):
+    def test_add_node_between(self):
+        graph = Graph(
+            data='''
+                digraph { 
+                    A; 
+                    B; 
+                    A -> B; 
+                }
+            ''',
+        )
+        new_levels = {
+            '0': {"A": []},
+            '1': {"1": ["A"]},
+            '2': {"B": ["1"]},
+        }
+        new_metadata = {
+            '1': {
+                "is_subgraph": False,
+                "subgraph_graph_id": 0,
+                "notes_ids": []
+            },
+            'A': {
+                "is_subgraph": False,
+                "subgraph_graph_id": 0,
+                "notes_ids": []
+            },
+            'B': {
+                "is_subgraph": False,
+                "subgraph_graph_id": 0,
+                "notes_ids": []
+            },
+        }
+
+        self.assertEqual(
+            graph._rewrite_graph_schema(new_levels, new_metadata).to_string(),
+            '''digraph G {\nA;\n1;\nA -> 1;\nB;\n1 -> B;\n}\n''',
+            msg='добавление узла между узлами'
+        )
+
+    def test_add_dead_end_node(self):
+        graph = Graph(
+            data='''
+                digraph { 
+                    A; 
+                    B; 
+                    A -> B; 
+                }
+            ''',
+        )
+        new_levels = {
+            '0': {"A": []},
+            '1': {"1": ["A"]},
+            '2': {"B": ["A"]},
+        }
+        new_metadata = {
+            '1': {
+                "is_subgraph": False,
+                "subgraph_graph_id": 0,
+                "notes_ids": []
+            },
+            'A': {
+                "is_subgraph": False,
+                "subgraph_graph_id": 0,
+                "notes_ids": []
+            },
+            'B': {
+                "is_subgraph": False,
+                "subgraph_graph_id": 0,
+                "notes_ids": []
+            },
+        }
+
+        self.assertEqual(
+            graph._rewrite_graph_schema(new_levels, new_metadata).to_string(),
+            '''digraph G {\nA;\n1;\nA -> 1;\nB;\nA -> B;\n}\n''',
+            msg='добавление тупикового узла',
+        )
+
+
+class TestGraph__rewrite_node_metadata(TestCase):
+    def test_edit_subgraph_id(self):
+        graph = Graph(
+            data='''
+                digraph { 
+                    A; 
+                    1 [subgraph=123];
+                    B; 
+                    A -> 1; 
+                    1 -> B; 
+                }
+            ''',
+        )
+
+        self.assertEqual(
+            graph._rewrite_node_metadata('1', {'is_subgraph': True, 'subgraph_graph_id': 345}),
+            {'subgraph': 345},
+            msg='изменение айди подграфа'
+        )
+
+    def test_set_subgraph_id_ok(self):
+        graph = Graph(
+            data='''
+                digraph { 
+                    A; 
+                    1;
+                    B; 
+                    A -> 1; 
+                    1 -> B; 
+                }
+            ''',
+        )
+
+        self.assertEqual(
+            graph._rewrite_node_metadata('1', {'is_subgraph': True, 'subgraph_graph_id': 123}, []),
+            {'subgraph': 123},
+            msg='успешное изменение типа узла на "подграф"'
+        )
+
+    def test_set_subgraph_id_fail(self):
+        graph = Graph(
+            data='''
+                digraph { 
+                    A; 
+                    1;
+                    B; 
+                    A -> 1; 
+                    1 -> B; 
+                }
+            ''',
+        )
+
+        with self.assertRaises(
+                expected_exception=BadRequest,
+                msg='нельзя изменить тип узла на "подграф", если к узлу привязаны заметки'):
+            graph._rewrite_node_metadata('1', {'is_subgraph': True, 'subgraph_graph_id': 123}, [1, 2])
+
+
+    def test_edit_node_title(self):
+        graph = Graph(
+            data='''
+                digraph { 
+                    A; 
+                    1 [title=Old_title];
+                    B; 
+                    A -> 1; 
+                    1 -> B; 
+                }
+            ''',
+        )
+
+        self.assertEqual(
+            graph._rewrite_node_metadata('1', {'title': 'New title', 'is_subgraph': False}),
+            {'title':'New_title'},
+            msg='изменение название узла'
+        )
+
+    def test_edit_node_title(self):
+        graph = Graph(
+            data='''
+                digraph { 
+                    A; 
+                    1;
+                    B; 
+                    A -> 1; 
+                    1 -> B; 
+                }
+            ''',
+        )
+
+        self.assertEqual(
+            graph._rewrite_node_metadata('1', {'title': 'New title', 'is_subgraph': False}),
+            {'title':'New_title'},
+            msg='установка названия узла'
         )

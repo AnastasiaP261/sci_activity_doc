@@ -52,12 +52,13 @@ urlpatterns = [
     path(r'note/', views.NoteList.as_view(),
          name='GET - список последних заметок, POST - создание заметки'),
 
-    # path('research/<str:rsrch_id>/graph/<int:graph_id>/node/<int:node_id>/'),
-    # path('research/<str:rsrch_id>/graph/<int:graph_id>/node/'),
-    #
+    # path('graph/<int:graph_id>/node/<int:node_id>/', views.NodeDetail.as_view()),
+    path('graph/<int:graph_id>/', views.GraphDetail.as_view()),
+    # path('graph/', views.CreateGraph.as_view()),
+
     # path('research/<str:rsrch_id>/graph/<int:graph_id>/'),
     # path('research/<str:rsrch_id>/graph/'),
-    #
+
     # path('research/<str:rsrch_id>/'),
     # path('research/'),
 ]
