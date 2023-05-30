@@ -95,10 +95,11 @@ class NoteDetail(generics.GenericAPIView,
     def destroy_note_and_relations_and_update_graph_data(self, request, *args, **kwargs):
         note_id = int(self.kwargs.get(self.lookup_url_kwarg))
 
-        # перед удалением NodesNotesRelation сработает изменение поля data в графе,
-        # все изменения пройдут внутри одной транзакции
-        # см. GraphDetail вью
-        NodesNotesRelation.objects.filter(note_id=note_id).delete()
+        nodes_notes_relations = NodesNotesRelation.objects.filter(note_id=note_id)
+        serializer = serializers.NodesNotesRelationSerializer(nodes_notes_relations, many=True).data
+        for i in serializer:
+            Graph.objects.get(graph_id=i['graph_id']).delete_node_from_dot(i['node_id'])
+
         Note.objects.get(note_id=note_id).delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -161,19 +162,6 @@ class GraphDetail(generics.GenericAPIView,
 
     # permission_classes = [permissions.IsAuthenticated] TODO: включи
 
-    @receiver(pre_delete, sender=NodesNotesRelation)
-    def delete_node_from_data(sender, instance: NodesNotesRelation, **kwargs):
-        '''
-        Срабатывает перед удалением объекта NodesNotesRelation.
-        Обновляет поле data графа, удаляя оттуда node(и все его связи), соотвествующий удаленному объекту
-        '''
-        try:
-            graph_id = instance.graph_id_id
-            node_id = instance.node_id
-            Graph.objects.get(graph_id=graph_id).delete_node_from_dot(node_id)
-        except Note.DoesNotExist:
-            raise Http404
-
     # GET DETAIL
     def retrieve_get_object(self):
         try:
@@ -227,8 +215,10 @@ class GraphDetail(generics.GenericAPIView,
         return self.retrieve(request, *args, **kwargs)
 
     # UPDATE
-    def update_get_object(self, graph_id: int):
+    def get_object(self):
         try:
+            graph_id = int(self.kwargs.get(self.lookup_url_kwarg))
+
             graph = Graph.objects.get(graph_id=graph_id)
             return graph
         except Note.DoesNotExist:
@@ -240,7 +230,7 @@ class GraphDetail(generics.GenericAPIView,
         except Note.DoesNotExist:
             raise Http404
 
-        graph = self.update_get_object(request.data['graph_id'])
+        graph = self.get_object()
 
         if update_type == 'update_name':
             serialized = serializers.GraphNameSerializer(graph, data=request.data, partial=True)
@@ -273,29 +263,10 @@ class GraphDetail(generics.GenericAPIView,
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
+    # DELETE
 
-    def destroy(self, request, *args, **kwargs):
-        pass
-
-'''
-digraph { 
-A; 
-1 [subgraph=3]; 
-2 [subgraph=4]; 
-3 [subgraph=5]; 
-4 [subgraph=6]; 
-5 [subgraph=7]; 
-B; 
-A -> 2; 
-2 -> 3; 
-2 -> 4; 
-2 -> 5; 
-3 -> 1; 
-4 -> 1; 
-5 -> 1; 
-1 -> B; 
-}
-'''
-
-
-
+    @transaction.atomic()
+    def delete(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

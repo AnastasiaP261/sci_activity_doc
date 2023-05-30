@@ -133,6 +133,9 @@ class Graph(models.Model):
         )
 
     # ПЕРЕОПРЕДЕЛЕННЫЕ МЕТОДЫ
+    
+    def delete(self, using=None, keep_parents=False):
+        return super().delete(using, keep_parents)
 
     def save(
             self, force_insert=False, force_update=False, using=None, update_fields=None
@@ -284,7 +287,7 @@ class Graph(models.Model):
 
     def delete_node_from_dot(self, node_id: str):  # TODO: need tests, добавить проверку что нет
         self._delete_node_from_dot(node_id)
-        super().save()
+        self.save()
 
     def _rewrite_graph_schema(self, levels: dict) -> pydot.Dot:
         """
@@ -571,7 +574,7 @@ class NodesNotesRelation(models.Model):
     # одна заметка может относиться к нескольким графам, к каждому единожды
     node_id = models.CharField(verbose_name="node_id", blank=False, max_length=3)
 
-    note_id = models.ForeignKey(Note, on_delete=models.PROTECT, blank=False)
+    note_id = models.ForeignKey(Note, on_delete=models.CASCADE, blank=False)
     graph_id = models.ForeignKey(Graph, on_delete=models.CASCADE, blank=False)
 
     class Meta:

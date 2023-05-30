@@ -60,11 +60,11 @@ class NoteWithAuthorIDAndNodeIDSerializer(NoteSerializer):
 
 class NodesNotesRelationSerializer(serializers.ModelSerializer):
     note_id = serializers.IntegerField(min_value=1, allow_null=False, source='note_id_id', read_only=True)
-
+    graph_id = serializers.IntegerField(min_value=1, allow_null=False, source='graph_id_id', read_only=True)
     class Meta:
         model = NodesNotesRelation
         lookup_field = 'graph_id'
-        fields = ['node_id', 'note_id']
+        fields = ['node_id', 'note_id', 'graph_id']
 
 
 class GraphSerializer(serializers.HyperlinkedModelSerializer):
