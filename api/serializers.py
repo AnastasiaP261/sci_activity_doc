@@ -28,29 +28,36 @@ class UserIDSerializer(serializers.Serializer):
     username = serializers.CharField()
 
 
-class RawNoteSerializer(serializers.ModelSerializer):
+class NoteWithoutGraphSerializer(serializers.ModelSerializer):
+    rsrch_id = serializers.IntegerField(min_value=1, allow_null=False, source='rsrch_id_id')
+    user_id = serializers.IntegerField(min_value=1, allow_null=False, source='user_id_id')
+
     class Meta:
         model = Note
-        lookup_field = 'note_id'
-        fields = ('note_id', 'url', 'note_type', 'user_id', 'research_id')
+        fields = ('note_id', 'url', 'note_type', 'created_at', 'rsrch_id', 'user_id',)
+        extra_kwargs = {
+            'note_id': {
+                'read_only': True,
+            },
+        }
 
 
-class NoteSerializer(serializers.Serializer):
+class NoteWithGraphIDSerializer(serializers.Serializer):
     note_id = serializers.IntegerField(min_value=1, allow_null=False, source='note_id_id', read_only=True)
     url = serializers.URLField(allow_blank=False, allow_null=False, source='note_id.url', required=True)
     note_type = serializers.CharField(min_length=2, allow_null=False, allow_blank=False, source='note_id.note_type',
                                       required=False)
     created_at = serializers.DateTimeField(allow_null=False, source='note_id.created_at', read_only=True)
-    research_id = serializers.IntegerField(min_value=1, allow_null=False, source='note_id.research_id_id',
+    rsrch_id = serializers.IntegerField(min_value=1, allow_null=False, source='note_id.rsrch_id_id',
                                            required=True)
-    graph_id = serializers.IntegerField(source='graph_id_id', required=False)
+    graph_id = serializers.IntegerField(source='graph_id_id', required=False, allow_null=True)
 
 
-class NoteWithAuthorInfoSerializer(NoteSerializer):
+class NoteWithAuthorInfoSerializer(NoteWithGraphIDSerializer):
     author = CustomUserSerializer(source='note_id.user_id', required=True)
 
 
-class NoteWithAuthorIDAndNodeIDSerializer(NoteSerializer):
+class NoteWithAuthorIDAndNodeIDSerializer(NoteWithGraphIDSerializer):
     author_user_id = serializers.IntegerField(allow_null=False, source='note_id.user_id_id', required=True)
     node_id = serializers.CharField(required=False)
 
@@ -66,7 +73,7 @@ class NodesNotesRelationSerializer(serializers.ModelSerializer):
 
 
 class GraphSerializer(serializers.HyperlinkedModelSerializer):
-    research_id = serializers.IntegerField(min_value=1, allow_null=False, source='research_id_id')
+    rsrch_id = serializers.IntegerField(min_value=1, allow_null=False, source='rsrch_id_id')
 
     raw_data = serializers.CharField(allow_null=False, allow_blank=False, source='data', read_only=True)
 
@@ -76,7 +83,7 @@ class GraphSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Graph
         lookup_field = 'graph_id'
-        fields = ['graph_id', 'title', 'research_id', 'raw_data', 'levels', 'nodes_metadata']
+        fields = ['graph_id', 'title', 'rsrch_id', 'raw_data', 'levels', 'nodes_metadata']
 
         extra_kwargs = {
             'graph_id': {
@@ -95,6 +102,12 @@ class GraphLevelsSerializer(serializers.ModelSerializer):
         model = Graph
         lookup_field = 'graph_id'
         fields = ['graph_id', 'levels']
+
+        extra_kwargs = {
+            'graph_id': {
+                'read_only': True,
+            },
+        }
 
 
 class NodeMetadataSerializer(serializers.Serializer):
@@ -128,6 +141,12 @@ class GraphMetadataSerializer(serializers.ModelSerializer):
         lookup_field = 'graph_id'
         fields = ['graph_id', 'node_metadata', 'node_id']
 
+        extra_kwargs = {
+            'graph_id': {
+                'read_only': True,
+            },
+        }
+
 
 class GraphNameSerializer(serializers.ModelSerializer):
     class Meta:
@@ -135,8 +154,14 @@ class GraphNameSerializer(serializers.ModelSerializer):
         lookup_field = 'graph_id'
         fields = ['graph_id', 'title']
 
+        extra_kwargs = {
+            'graph_id': {
+                'read_only': True,
+            },
+        }
 
-class ResearchSerializer(serializers.ModelSerializer):
+
+class ResearchSerializer(serializers.HyperlinkedModelSerializer):
     researchers = CustomUserSerializer(many=True, allow_null=False, read_only=True)
 
     class Meta:

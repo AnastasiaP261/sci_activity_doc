@@ -163,7 +163,7 @@
     "fields": {
       "data": "digraph {A;B;A->B;}",
       "title": "Разработка web-ориентированного редактора графовых моделей",
-      "research_id": "1"
+      "rsrch_id": "1"
     }
   },
   {
@@ -172,7 +172,7 @@
     "fields": {
       "data": "digraph {A;B;A->B;}",
       "title": "Разработка библиотеки функций на языке Python, реализующей автоматизированное построение динамических графических пользовательских интерфейсов в рамках CMS Django",
-      "research_id": "1"
+      "rsrch_id": "1"
     }
   },
   {
@@ -181,7 +181,7 @@
     "fields": {
       "data": "digraph{A;B;1[title=Методологии];2[title=Проектирование];3[title=API];4[title=Разработка];A->1;A->2;2->3;3->4;4->B;}",
       "title": "Разработка программного обеспечения. Управление. Методики. Технологии",
-      "research_id": "2"
+      "rsrch_id": "2"
     }
   },
   {
@@ -190,7 +190,7 @@
     "fields": {
       "data": "digraph {A;B;A->B;}",
       "title": "Динамическое документирование научно-образовательной деятельности",
-      "research_id": "2"
+      "rsrch_id": "2"
     }
   },
   {
@@ -199,7 +199,7 @@
     "fields": {
       "data": "digraph {A;B;A->B;}",
       "title": "Автоматизация научно-исследовательской деятельности",
-      "research_id": "2"
+      "rsrch_id": "2"
     }
   },
   {
@@ -208,7 +208,7 @@
     "fields": {
       "data": "digraph {A;B;A->B;}",
       "title": "Библиографические базы данных",
-      "research_id": "2"
+      "rsrch_id": "2"
     }
   },
   {
@@ -217,7 +217,7 @@
     "fields": {
       "data": "digraph {A;B;A->B;}",
       "title": "Автоматизация образовательной деятельности",
-      "research_id": "2"
+      "rsrch_id": "2"
     }
   },
   {
@@ -226,7 +226,7 @@
     "fields": {
       "data": "digraph {A;1 [subgraph=3];2 [subgraph=4];3 [subgraph=5];4 [subgraph=6];5 [subgraph=7];B;A->2;2->3;2->4;2->5;3->1;4->1;5->1;1->B;}",
       "title": "MAIN",
-      "research_id": "2"
+      "rsrch_id": "2"
     }
   },
   {
@@ -236,7 +236,7 @@
       "url": "https://sa2systems.ru:88/rnd/rndcse/blob/2021_rk6_71_petrichukao/rndcse_txb_Research/ResearchNotes/rndcse_not_bdb_2022_01_11.tex",
       "note_type": "test",
       "created_at": "2023-05-15T23:30:14Z",
-      "research_id": "2",
+      "rsrch_id": "2",
       "user_id": 6
     }
   },
@@ -247,7 +247,7 @@
       "url": "https://sa2systems.ru:88/rnd/rndcse/blob/2021_rk6_71_petrichukao/rndcse_txb_Research/ResearchNotes/rndcse_not_dev_2021_11_21.tex",
       "note_type": "test",
       "created_at": "2023-05-29T15:25:58Z",
-      "research_id": "2",
+      "rsrch_id": "2",
       "user_id": 6
     }
   },
@@ -258,7 +258,7 @@
       "url": "https://sa2systems.ru:88/rnd/rndcse/blob/2021_rk6_71_petrichukao/rndcse_txb_Research/ResearchNotes/rndcse_not_dev_2023_02_05.tex",
       "note_type": "test",
       "created_at": "2023-05-29T15:27:12Z",
-      "research_id": "2",
+      "rsrch_id": "2",
       "user_id": 6
     }
   },
@@ -269,7 +269,7 @@
       "url": "https://sa2systems.ru:88/rnd/rndcse/blob/2021_rk6_71_petrichukao/rndcse_txb_Research/ResearchNotes/rndcse_not_dev_2023_02_25.tex",
       "note_type": "test",
       "created_at": "2023-05-29T15:28:30Z",
-      "research_id": "2",
+      "rsrch_id": "2",
       "user_id": 6
     }
   },
@@ -280,7 +280,7 @@
       "url": "https://sa2systems.ru:88/rnd/rndcse/blob/2021_rk6_71_petrichukao/rndcse_txb_Research/ResearchNotes/rndcse_not_dev_2023_04_11.tex",
       "note_type": "test",
       "created_at": "2023-05-29T15:28:39Z",
-      "research_id": "2",
+      "rsrch_id": "2",
       "user_id": 6
     }
   },
@@ -291,7 +291,7 @@
       "url": "https://sa2systems.ru:88/rnd/rndcse/blob/2021_rk6_71_petrichukao/rndcse_txb_Research/ResearchNotes/rndcse_not_dev_2023_04_13.tex",
       "note_type": "test",
       "created_at": "2023-05-29T15:29:08Z",
-      "research_id": "2",
+      "rsrch_id": "2",
       "user_id": 6
     }
   },
@@ -302,7 +302,7 @@
       "url": "https://sa2systems.ru:88/rnd/rndcse/blob/2021_rk6_71_petrichukao/rndcse_txb_Research/ResearchNotes/rndcse_not_dev_2023_04_14.tex",
       "note_type": "test",
       "created_at": "2023-05-29T15:29:41Z",
-      "research_id": "2",
+      "rsrch_id": "2",
       "user_id": 6
     }
   },

@@ -12,6 +12,7 @@ from django.db.models.signals import post_delete, pre_delete, post_save, pre_sav
 from django.dispatch import receiver
 from django.core.exceptions import ObjectDoesNotExist, BadRequest
 from django.db import transaction
+from django.shortcuts import get_object_or_404
 
 
 class StandardResultsSetPagination(PageNumberPagination):
@@ -314,24 +315,55 @@ class ResearchDetail(generics.RetrieveAPIView,
                      generics.UpdateAPIView,
                      generics.DestroyAPIView):
     # permission_classes = [permissions.IsAuthenticated] TODO: включи
-    serializer_class = serializers.ResearchSerializer
+    lookup_url_kwarg = 'rsrch_id'
 
-    def get_queryset(self):
+    def get_object(self):
         try:
-            if 'user_id' in self.request.query_params:
-                rsrch_id = int(self.request.query_params['user_id'])
-                queryset = User.objects. \
-                    filter(is_superuser=False, research=rsrch_id). \
-                    order_by('-created_at')
-                return queryset
+            rsrch_id = self.kwargs.get(self.lookup_url_kwarg)
 
-            queryset = Research.objects. \
-                all. \
-                order_by('-created_at')
-            return queryset
+            if self.request.method == 'GET':
+                research = Research.objects.\
+                    get(pk=rsrch_id)
+                graphs = Graph.objects. \
+                    filter(rsrch_id=rsrch_id). \
+                    order_by('title')
+                notes_without_graph = Note.objects. \
+                    filter(rsrch_id=rsrch_id, nodesnotesrelation__graph_id_id__isnull=True)
+
+                return research, graphs, notes_without_graph
+            else:
+                raise BadRequest()
 
         except Note.DoesNotExist:
             raise Http404
+
+    def get_serializer(self, *args, **kwargs):
+        kwargs.setdefault('context', self.get_serializer_context())
+
+        if self.request.method == 'GET':
+            return serializers.ResearchSerializer, \
+                serializers.GraphNameSerializer, \
+                serializers.serializers.ListField
+
+    def retrieve(self, request, *args, **kwargs):
+        research, graphs, notes_without_graph = self.get_object()
+
+        r_serialize = serializers.ResearchSerializer(research)
+        research = r_serialize.data
+
+        g_serializer = serializers.GraphNameSerializer(graphs, many=True)
+        graphs = g_serializer.data
+
+        n_serializer = serializers.NoteWithoutGraphSerializer(notes_without_graph, many=True, required=False)
+        notes_without_graph = n_serializer.data
+
+        kwargs.setdefault('context', self.get_serializer_context())
+
+        data = research
+        data['graphs'] = graphs
+        data['notes_without_graphs'] = notes_without_graph
+
+        return Response(data)
 
 
 class ResearchList(generics.CreateAPIView,
@@ -342,12 +374,12 @@ class ResearchList(generics.CreateAPIView,
 
     def get_serializer(self, *args, **kwargs):
         if self.request.method == 'GET':
-            serializer_class = serializers.ResearchSerializer
+            serializer = serializers.ResearchSerializer
         if self.request.method == 'POST':
-            serializer_class = serializers.ResearchCreateSerializer
+            serializer = serializers.ResearchCreateSerializer
 
         kwargs.setdefault('context', self.get_serializer_context())
-        return serializer_class(*args, **kwargs)
+        return serializer(*args, **kwargs)
 
     def get_queryset(self):
         try:
