@@ -55,12 +55,12 @@ urlpatterns = [
     path('graph/<int:graph_id>/node/<int:node_id>/', views.NodeDetail.as_view(),
          name='GET - просмотр информации об узле графа'),
     path('graph/<int:graph_id>/', views.GraphDetail.as_view(),
-         name='GET - показ информации о графе по его айди, DELETE - удаление графа, PUT - обновление информации в графе'),
+         name='GET - показ информации о графе по его айди, DELETE - удаление графа, PATCH - обновление информации в графе'),
     path('graph/', views.CreateGraph.as_view(),
          name='POST - создание графа'),
 
     path('research/<str:rsrch_id>/', views.ResearchDetail.as_view(),
-         name=''),
+         name='GET - показ информации об исследовании, DELETE - удаление исследования, PATCH - обновление информации в исследовании'),
     path('research/', views.ResearchList.as_view(),
          name='GET - запрос всех исследований или исследований пользователя, POST - создание графа'),
 ]

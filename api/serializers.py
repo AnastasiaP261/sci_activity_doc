@@ -3,7 +3,7 @@ from core.models import Research, Graph, Note, NodesNotesRelation, User
 from rest_framework.validators import UniqueTogetherValidator
 
 
-class CustomUserSerializer(serializers.HyperlinkedModelSerializer):
+class CustomUserSerializer(serializers.ModelSerializer):
     groups = serializers.ListField(
         child=serializers.CharField(min_length=1),
         allow_empty=True,
@@ -29,7 +29,7 @@ class UserIDSerializer(serializers.Serializer):
 
 
 class NoteWithoutGraphSerializer(serializers.ModelSerializer):
-    rsrch_id = serializers.IntegerField(min_value=1, allow_null=False, source='rsrch_id_id')
+    rsrch_id = serializers.IntegerField(min_value=1, allow_null=False, source='rsrch_id_id', read_only=True)
     user_id = serializers.IntegerField(min_value=1, allow_null=False, source='user_id_id')
 
     class Meta:
@@ -49,7 +49,7 @@ class NoteWithGraphIDSerializer(serializers.Serializer):
                                       required=False)
     created_at = serializers.DateTimeField(allow_null=False, source='note_id.created_at', read_only=True)
     rsrch_id = serializers.IntegerField(min_value=1, allow_null=False, source='note_id.rsrch_id_id',
-                                           required=True)
+                                        required=True)
     graph_id = serializers.IntegerField(source='graph_id_id', required=False, allow_null=True)
 
 
@@ -72,7 +72,7 @@ class NodesNotesRelationSerializer(serializers.ModelSerializer):
         fields = ['node_id', 'note_id', 'graph_id']
 
 
-class GraphSerializer(serializers.HyperlinkedModelSerializer):
+class GraphSerializer(serializers.ModelSerializer):
     rsrch_id = serializers.IntegerField(min_value=1, allow_null=False, source='rsrch_id_id')
 
     raw_data = serializers.CharField(allow_null=False, allow_blank=False, source='data', read_only=True)
@@ -161,7 +161,7 @@ class GraphNameSerializer(serializers.ModelSerializer):
         }
 
 
-class ResearchSerializer(serializers.HyperlinkedModelSerializer):
+class ResearchSerializer(serializers.ModelSerializer):
     researchers = CustomUserSerializer(many=True, allow_null=False, read_only=True)
 
     class Meta:
@@ -183,3 +183,24 @@ class ResearchCreateSerializer(serializers.ModelSerializer):
         model = Research
         fields = (
             'rsrch_id', 'title', 'description', 'start_date', 'end_date')
+
+
+class ResearchUpdateSerializer(serializers.ModelSerializer):
+    def update(self, instance, validated_data):
+        instance.title = validated_data.get('title', instance.title)
+        instance.description = validated_data.get('description', instance.description)
+        instance.start_date = validated_data.get('start_date', instance.start_date)
+        instance.end_date = validated_data.get('end_date', instance.end_date)
+        if 'researchers' in validated_data:
+            instance.researchers.set(validated_data.get('researchers'))
+        instance.save()
+        return instance
+
+    class Meta:
+        model = Research
+        fields = ('title', 'description', 'start_date', 'end_date', 'researchers')
+        extra_kwargs = {
+            'researchers': {
+                'allow_empty': True,
+            },
+        }

@@ -245,6 +245,7 @@ class GraphDetail(generics.GenericAPIView,
 
     def update(self, request, *args, **kwargs):
         try:
+            partial = kwargs.pop('partial', False)
             update_type = request.query_params['update_type']
         except Note.DoesNotExist:
             raise Http404
@@ -252,17 +253,17 @@ class GraphDetail(generics.GenericAPIView,
         graph = self.get_object()
 
         if update_type == 'update_name':
-            serialized = serializers.GraphNameSerializer(graph, data=request.data, partial=True)
+            serialized = serializers.GraphNameSerializer(graph, data=request.data, partial=partial)
             serialized.is_valid(raise_exception=True)
 
         elif update_type == 'update_levels':
-            serialized = serializers.GraphLevelsSerializer(graph, data=request.data, partial=True)
+            serialized = serializers.GraphLevelsSerializer(graph, data=request.data, partial=partial)
             serialized.is_valid(raise_exception=True)
 
             serialized.instance.rewrite_graph_schema(request.data['levels'])
 
         elif update_type == 'update_metadata':
-            serialized = serializers.GraphMetadataSerializer(graph, data=request.data, partial=True)
+            serialized = serializers.GraphMetadataSerializer(graph, data=request.data, partial=partial)
             serialized.is_valid(raise_exception=True)
 
             serialized.instance.rewrite_node_metadata(request.data['node_id'], request.data['node_metadata'])
@@ -279,8 +280,8 @@ class GraphDetail(generics.GenericAPIView,
 
         return Response(serialized.data)
 
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
+    def patch(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
 
     # DELETE
 
@@ -317,7 +318,7 @@ class ResearchDetail(generics.RetrieveAPIView,
     # permission_classes = [permissions.IsAuthenticated] TODO: включи
     lookup_url_kwarg = 'rsrch_id'
 
-    def get_permissions(self): # надо добавить всюду: добавить доступ только для препода
+    def get_permissions(self):  # надо добавить всюду: добавить доступ только для препода
         return [permission() for permission in self.permission_classes]
 
     def get_object(self):
@@ -325,7 +326,7 @@ class ResearchDetail(generics.RetrieveAPIView,
             rsrch_id = self.kwargs.get(self.lookup_url_kwarg)
 
             if self.request.method == 'GET':
-                research = Research.objects.\
+                research = Research.objects. \
                     get(pk=rsrch_id)
                 graphs = Graph.objects. \
                     filter(rsrch_id=rsrch_id). \
@@ -335,8 +336,8 @@ class ResearchDetail(generics.RetrieveAPIView,
 
                 return research, graphs, notes_without_graph
 
-            elif self.request.method == 'DELETE':
-                research = Research.objects.\
+            elif self.request.method in ('DELETE', 'PATCH'):
+                research = Research.objects. \
                     get(pk=rsrch_id)
 
                 return research
@@ -348,12 +349,16 @@ class ResearchDetail(generics.RetrieveAPIView,
             raise Http404
 
     def get_serializer(self, *args, **kwargs):
-        kwargs.setdefault('context', self.get_serializer_context())
-
         if self.request.method == 'GET':
+            kwargs.setdefault('context', self.get_serializer_context())
             return serializers.ResearchSerializer, \
                 serializers.GraphNameSerializer, \
-                serializers.serializers.ListField
+                serializers.NoteWithoutGraphSerializer
+
+        elif self.request.method == 'PATCH':
+            serializer = serializers.ResearchUpdateSerializer
+            kwargs.setdefault('context', self.get_serializer_context())
+            return serializer(*args, **kwargs)
 
     def retrieve(self, request, *args, **kwargs):
         research, graphs, notes_without_graph = self.get_object()
@@ -375,6 +380,13 @@ class ResearchDetail(generics.RetrieveAPIView,
 
         return Response(data)
 
+    @transaction.atomic()
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(*args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+
 
 class ResearchList(generics.CreateAPIView,
                    generics.ListAPIView):
@@ -385,7 +397,7 @@ class ResearchList(generics.CreateAPIView,
     def get_serializer(self, *args, **kwargs):
         if self.request.method == 'GET':
             serializer = serializers.ResearchSerializer
-        if self.request.method == 'POST':
+        elif self.request.method == 'POST':
             serializer = serializers.ResearchCreateSerializer
 
         kwargs.setdefault('context', self.get_serializer_context())
