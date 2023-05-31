@@ -17,12 +17,12 @@ class UserAdmin(UserAdmin):
 @admin.register(Research)
 class ResearchAdmin(admin.ModelAdmin):
     list_display = ['rsrch_id', 'title', 'description', 'start_date', 'end_date',
-                    'get_researchers_ids']  # либо использовать researchers_names вместо researchers_ids
+                    'get_rsrchers_ids']  # либо использовать researchers_names вместо rsrchers_ids
 
 
 @admin.register(Graph)
 class GraphAdmin(admin.ModelAdmin):
-    list_display = ['graph_id', 'data', 'title', 'research_id']
+    list_display = ['graph_id', 'data', 'title', 'rsrch_id']
 
 
 @admin.register(Note)

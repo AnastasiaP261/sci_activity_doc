@@ -91,13 +91,13 @@ class Research(models.Model):
             ("can_add_graphs_to", "Can add graphs to research"),
         )
 
-    def get_researchers_ids(self) -> str:
+    def get_rsrchers_ids(self) -> str:
         """
          Возвращает строку, в которой перечислены id связанных исследователей
         """
         return f'{", ".join([str(user.id) for user in self.researchers.all()])}'
 
-    def get_researchers_ids_list(self) -> list:
+    def get_rsrchers_ids_list(self) -> list:
         """
          Возвращает список, в котором перечислены id связанных исследователей
         """
@@ -110,7 +110,7 @@ class Research(models.Model):
         """
         return f'{", ".join([user.get_short_full_name() for user in self.researchers.all()])}'
 
-    get_researchers_ids.short_description = u'researchers_ids'
+    get_rsrchers_ids.short_description = u'rsrchers_ids'
     get_researchers_names.short_description = u'researchers_names'
 
     def __str__(self) -> str:
@@ -129,7 +129,7 @@ class Graph(models.Model):
     data = models.TextField(verbose_name="data", blank=False, default=DEFAULT_GRAPH)
     title = models.CharField(verbose_name="title", max_length=200, blank=False)
 
-    research_id = models.ForeignKey(Research, on_delete=models.CASCADE, blank=False)
+    rsrch_id = models.ForeignKey(Research, on_delete=models.CASCADE, blank=False)
 
     _dot = pydot.Dot  # обращаться только через геттер _get_dot! Это гарантирует актуальность данных
 
@@ -563,8 +563,8 @@ class Note(models.Model):
     note_type = models.CharField(verbose_name="note_type", max_length=20)
     created_at = models.DateTimeField(verbose_name='created_at', default=timezone.now)
 
-    research_id = models.ForeignKey(Research, blank=False,  # тк заметка может быть не привязана к графу
-                                    on_delete=models.CASCADE)
+    rsrch_id = models.ForeignKey(Research, blank=False,  # тк заметка может быть не привязана к графу
+                                 on_delete=models.CASCADE)
     user_id = models.ForeignKey(user_model, blank=False, on_delete=models.PROTECT)
 
     def __str__(self) -> str:
