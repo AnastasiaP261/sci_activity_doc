@@ -317,6 +317,9 @@ class ResearchDetail(generics.RetrieveAPIView,
     # permission_classes = [permissions.IsAuthenticated] TODO: включи
     lookup_url_kwarg = 'rsrch_id'
 
+    def get_permissions(self): # надо добавить всюду: добавить доступ только для препода
+        return [permission() for permission in self.permission_classes]
+
     def get_object(self):
         try:
             rsrch_id = self.kwargs.get(self.lookup_url_kwarg)
@@ -331,6 +334,13 @@ class ResearchDetail(generics.RetrieveAPIView,
                     filter(rsrch_id=rsrch_id, nodesnotesrelation__graph_id_id__isnull=True)
 
                 return research, graphs, notes_without_graph
+
+            elif self.request.method == 'DELETE':
+                research = Research.objects.\
+                    get(pk=rsrch_id)
+
+                return research
+
             else:
                 raise BadRequest()
 
