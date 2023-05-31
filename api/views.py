@@ -44,6 +44,14 @@ class ResearcherList(generics.ListAPIView):
                     order_by('-is_active', 'last_name', 'first_name', 'surname')
                 return queryset
 
+            if 'user_ids' in self.request.query_params:
+                user_ids = self.request.query_params['user_ids']
+                user_ids = (int(id) for id in user_ids.split('|'))
+                queryset = User.objects. \
+                    filter(is_superuser=False, id__in=user_ids). \
+                    order_by('-is_active', 'last_name', 'first_name', 'surname')
+                return queryset
+
             queryset = User.objects. \
                 filter(is_superuser=False). \
                 order_by('-is_active', 'last_name', 'first_name', 'surname')
