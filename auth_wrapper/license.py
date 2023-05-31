@@ -1,13 +1,42 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
+ADMIN_GROUP = 'admin'
+PROFESSOR_GROUP = 'professor'
+RESEARCHER_GROUP = 'researcher'
 
-class IsOwnerProfileOrReadOnly(BasePermission):
+
+class IsOwnerResearchOrIsProfessorOrReadOnly(BasePermission):
     """
-    Проверяем, похож ли запрашивающий пользователь на пользовательское поле объекта.
-    Это гарантирует, что владелец профиля - единственный, кто может изменить свою информацию.
+    Проверяем, является ли пользователь привязанным к исследованию или преподавателем.
+    Это гарантирует, что исследователь и преподаватели - единственные, кто может изменить данные исследования.
     """
 
-    def has_object_permission(self, request, view, obj):
+    def has_object_permission(self, request, view, obj: dict):
         if request.method in SAFE_METHODS:
             return True
-        return obj.user == request.user
+
+        is_owner = obj["user_id"] == request.user
+
+        is_prof = False
+        for g in request.user.get_groups_list():
+            if g in (PROFESSOR_GROUP, ADMIN_GROUP):
+                is_prof = True
+
+        return is_owner or is_prof
+
+
+class IsProfessorOrReadOnly(BasePermission):
+    """
+    Доступ к некоторым небезопасным методам может иметь только преподаватель
+    """
+
+    def has_permission(self, request, view) -> bool:
+        if request.method in SAFE_METHODS:
+            return True
+
+        have_access = False
+        for g in request.user.get_groups_list():
+            if g in (PROFESSOR_GROUP, ADMIN_GROUP):
+                have_access = True
+
+        return have_access
