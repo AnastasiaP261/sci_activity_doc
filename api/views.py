@@ -1,28 +1,15 @@
 import collections
 import json
 
-from rest_framework import generics
-from rest_framework.pagination import PageNumberPagination
-from django.http import Http404
-from . import serializers
-from core.models import User, Note, NodesNotesRelation, Graph, Research
-from rest_framework import permissions, generics, mixins, status
-from rest_framework.response import Response
-from django.db.models.signals import post_delete, pre_delete, post_save, pre_save, post_init, pre_init
-from django.dispatch import receiver
 from django.core.exceptions import ObjectDoesNotExist, BadRequest
 from django.db import transaction
-from django.shortcuts import get_object_or_404
+from django.http import Http404
+from rest_framework import permissions, generics, mixins, status
+from rest_framework.response import Response
 
-
-class StandardResultsSetPagination(PageNumberPagination):
-    """
-    Класс для настройки пагинации
-    """
-    page_size = 10
-    max_page_size = 100
-    page_size_query_param = 'size'
-    page_query_param = 'page'
+from core.models import User, Note, NodesNotesRelation, Graph, Research
+from . import serializers
+from .pagination import StandardResultsSetPagination
 
 
 class ResearcherList(generics.ListAPIView):
@@ -73,26 +60,36 @@ class UserDetail(generics.RetrieveAPIView):
         return User.objects.get(username=self.request.user.get_username())
 
 
-class NoteDetail(generics.GenericAPIView,
-                 mixins.RetrieveModelMixin,
-                 # mixins.UpdateModelMixin,
-                 mixins.DestroyModelMixin):
-    serializer_class = serializers.NoteWithAuthorInfoSerializer
+class NoteDetail(generics.RetrieveAPIView,
+                 generics.DestroyAPIView):
     lookup_url_kwarg = 'note_id'
     lookup_field = 'note_id'
 
     # permission_classes = [permissions.IsAuthenticated] TODO: включи
 
-    def retrieve_get_object(self):
+    def get_object(self):
         try:
             note_id = int(self.kwargs.get(self.lookup_url_kwarg))
-            data = NodesNotesRelation.objects.prefetch_related('note_id__user_id').get(note_id=note_id)
-            return data
+            if self.request.method == 'GET':
+                nodes_notes_relations = NodesNotesRelation.objects.prefetch_related('note_id__user_id').get(note_id=note_id)
+                return nodes_notes_relations
+
+            elif self.request.method == 'DELETE':
+                note = Note.objects.get(note_id=note_id)
+                return note
+
         except Note.DoesNotExist:
             raise Http404
 
+    def get_serializer(self, *args, **kwargs):
+        if self.request.method == 'GET':
+            serializer = serializers.NoteWithAuthorInfoSerializer
+
+        kwargs.setdefault('context', self.get_serializer_context())
+        return serializer(*args, **kwargs)
+
     def retrieve(self, request, *args, **kwargs):
-        instance = self.retrieve_get_object()
+        instance = self.get_object()
         serializer = self.get_serializer(instance)
 
         data = serializer.data
@@ -111,28 +108,9 @@ class NoteDetail(generics.GenericAPIView,
 
         return Response(serializer.data)
 
-    def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
-
-    # def put(self, request, *args, **kwargs):
-    #     # TODO: обновление заметки вроде не нужно, убери миксин
-    #     return self.update(request, *args, **kwargs)
-
     @transaction.atomic
-    def destroy_note_and_relations_and_update_graph_data(self, request, *args, **kwargs):
-        note_id = int(self.kwargs.get(self.lookup_url_kwarg))
-
-        nodes_notes_relations = NodesNotesRelation.objects.filter(note_id=note_id)
-        serializer = serializers.NodesNotesRelationSerializer(nodes_notes_relations, many=True).data
-        for i in serializer:
-            Graph.objects.get(graph_id=i['graph_id']).delete_node_from_dot(i['node_id'])
-
-        Note.objects.get(note_id=note_id).delete()
-
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-    def delete(self, request, *args, **kwargs):
-        return self.destroy_note_and_relations_and_update_graph_data(request, *args, **kwargs)
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
 
 
 class NoteList(generics.ListCreateAPIView):
