@@ -59,9 +59,8 @@ urlpatterns = [
     path('graph/', views.CreateGraph.as_view(),
          name='POST - создание графа'),
 
-    # path('research/<str:rsrch_id>/graph/<int:graph_id>/'),
-    # path('research/<str:rsrch_id>/graph/'),
-
-    # path('research/<str:rsrch_id>/'),
-    # path('research/'),
+    path('research/<str:rsrch_id>/', views.ResearchDetail.as_view(),
+         name=''),
+    path('research/', views.ResearchList.as_view(),
+         name='GET - запрос всех исследований или исследований пользователя, POST - создание графа'),
 ]

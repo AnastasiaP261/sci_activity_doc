@@ -24,11 +24,8 @@ class CustomUserSerializer(serializers.HyperlinkedModelSerializer):
         }
 
 
-class ResearchSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = Research
-        fields = ('rsrch_id', 'title', 'description', 'start_date', 'end_date',
-                  'get_researchers_ids')
+class UserIDSerializer(serializers.Serializer):
+    username = serializers.CharField()
 
 
 class RawNoteSerializer(serializers.ModelSerializer):
@@ -61,6 +58,7 @@ class NoteWithAuthorIDAndNodeIDSerializer(NoteSerializer):
 class NodesNotesRelationSerializer(serializers.ModelSerializer):
     note_id = serializers.IntegerField(min_value=1, allow_null=False, source='note_id_id', read_only=True)
     graph_id = serializers.IntegerField(min_value=1, allow_null=False, source='graph_id_id', read_only=True)
+
     class Meta:
         model = NodesNotesRelation
         lookup_field = 'graph_id'
@@ -85,6 +83,7 @@ class GraphSerializer(serializers.HyperlinkedModelSerializer):
                 'read_only': True,
             },
         }
+
 
 class GraphLevelsSerializer(serializers.ModelSerializer):
     levels = serializers.JSONField(allow_null=False, read_only=True, source='dot_to_json_levels')
@@ -135,3 +134,27 @@ class GraphNameSerializer(serializers.ModelSerializer):
         model = Graph
         lookup_field = 'graph_id'
         fields = ['graph_id', 'title']
+
+
+class ResearchSerializer(serializers.ModelSerializer):
+    researchers = CustomUserSerializer(many=True, allow_null=False, read_only=True)
+
+    class Meta:
+        model = Research
+        fields = (
+            'rsrch_id', 'title', 'description', 'start_date', 'end_date', 'created_at', 'researchers')
+        extra_kwargs = {
+            'rsrch_id': {
+                'read_only': True,
+            },
+            'created_at': {
+                'read_only': True,
+            },
+        }
+
+
+class ResearchCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Research
+        fields = (
+            'rsrch_id', 'title', 'description', 'start_date', 'end_date')

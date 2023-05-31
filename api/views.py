@@ -31,6 +31,7 @@ class ResearcherList(generics.ListAPIView):
     """
     serializer_class = serializers.CustomUserSerializer
     pagination_class = StandardResultsSetPagination
+
     # permission_classes = [permissions.IsAuthenticated] TODO: включи
 
     def get_queryset(self):
@@ -42,7 +43,7 @@ class ResearcherList(generics.ListAPIView):
                     order_by('-is_active', 'last_name', 'first_name', 'surname')
                 return queryset
 
-            queryset = User.objects.\
+            queryset = User.objects. \
                 filter(is_superuser=False). \
                 order_by('-is_active', 'last_name', 'first_name', 'surname')
             return queryset
@@ -305,5 +306,62 @@ class NodeDetail(generics.ListAPIView):
             obj = NodesNotesRelation.objects.filter(graph_id=graph_id, node_id=node_id).prefetch_related(
                 'note_id').order_by('note_id__created_at')
             return obj
+        except Note.DoesNotExist:
+            raise Http404
+
+
+class ResearchDetail(generics.RetrieveAPIView,
+                     generics.UpdateAPIView,
+                     generics.DestroyAPIView):
+    # permission_classes = [permissions.IsAuthenticated] TODO: включи
+    serializer_class = serializers.ResearchSerializer
+
+    def get_queryset(self):
+        try:
+            if 'user_id' in self.request.query_params:
+                rsrch_id = int(self.request.query_params['user_id'])
+                queryset = User.objects. \
+                    filter(is_superuser=False, research=rsrch_id). \
+                    order_by('-created_at')
+                return queryset
+
+            queryset = Research.objects. \
+                all. \
+                order_by('-created_at')
+            return queryset
+
+        except Note.DoesNotExist:
+            raise Http404
+
+
+class ResearchList(generics.CreateAPIView,
+                   generics.ListAPIView):
+    pagination_class = StandardResultsSetPagination
+
+    # permission_classes = [permissions.IsAuthenticated] TODO: включи
+
+    def get_serializer(self, *args, **kwargs):
+        if self.request.method == 'GET':
+            serializer_class = serializers.ResearchSerializer
+        if self.request.method == 'POST':
+            serializer_class = serializers.ResearchCreateSerializer
+
+        kwargs.setdefault('context', self.get_serializer_context())
+        return serializer_class(*args, **kwargs)
+
+    def get_queryset(self):
+        try:
+            if 'user_id' in self.request.query_params:
+                user_id = int(self.request.query_params['user_id'])
+                queryset = Research.objects. \
+                    filter(researchers__id=user_id). \
+                    order_by('-created_at')
+
+                return queryset
+
+            queryset = Research.objects. \
+                order_by('-created_at')
+            return queryset
+
         except Note.DoesNotExist:
             raise Http404

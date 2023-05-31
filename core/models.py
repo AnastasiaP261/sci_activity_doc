@@ -81,6 +81,7 @@ class Research(models.Model):
     start_date = models.DateField(verbose_name="start_date", help_text="Дата начала работы над исследованием")
     end_date = models.DateField(verbose_name="end_date",
                                 help_text="Планируемая дата окончания работы над исследованием")
+    created_at = models.DateTimeField(verbose_name='created_at', default=timezone.now)
 
     researchers = models.ManyToManyField(user_model, db_table="researches_users_relation")
 
@@ -95,6 +96,12 @@ class Research(models.Model):
          Возвращает строку, в которой перечислены id связанных исследователей
         """
         return f'{", ".join([str(user.id) for user in self.researchers.all()])}'
+
+    def get_researchers_ids_list(self) -> list:
+        """
+         Возвращает список, в котором перечислены id связанных исследователей
+        """
+        return [user.id for user in self.researchers.all()]
 
     def get_researchers_names(self) -> str:
         """
