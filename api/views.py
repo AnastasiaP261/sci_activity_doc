@@ -2,6 +2,8 @@ import collections
 import json
 
 from django.core.exceptions import ObjectDoesNotExist, BadRequest
+from rest_framework.exceptions import ValidationError
+
 from django.db import transaction
 from django.http import Http404
 from rest_framework import permissions, generics, mixins, status
@@ -71,7 +73,8 @@ class NoteDetail(generics.RetrieveAPIView,
         try:
             note_id = int(self.kwargs.get(self.lookup_url_kwarg))
             if self.request.method == 'GET':
-                nodes_notes_relations = NodesNotesRelation.objects.prefetch_related('note_id__user_id').get(note_id=note_id)
+                nodes_notes_relations = NodesNotesRelation.objects.prefetch_related('note_id__user_id').get(
+                    note_id=note_id)
                 return nodes_notes_relations
 
             elif self.request.method == 'DELETE':
@@ -113,49 +116,56 @@ class NoteDetail(generics.RetrieveAPIView,
         return super().destroy(request, *args, **kwargs)
 
 
-class NoteList(generics.ListCreateAPIView):
-    serializer_class = serializers.NoteWithAuthorIDAndNodeIDSerializer
-    queryset = NodesNotesRelation.objects.prefetch_related('note_id__user_id').order_by('note_id__created_at')
+class NoteCreate(generics.CreateAPIView):
     pagination_class = StandardResultsSetPagination
+    permission_classes = [permissions.IsAuthenticated]
 
-    # permission_classes = [permissions.IsAuthenticated] TODO: включи
+    def get_serializer(self, *args, **kwargs):
+        note_serializer = serializers.NoteSerializer
+        nodes_notes_rel_serializer = serializers.NodesNotesRelationCreateSerializer
+
+        kwargs.setdefault('context', self.get_serializer_context())
+        return note_serializer(*args, **kwargs), nodes_notes_rel_serializer(*args, **kwargs)
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        validated_data = serializer.validated_data
+        note_serializer, nodes_notes_rel_serializer = self.get_serializer(data=request.data)
+        note_serializer.is_valid(raise_exception=True)
+        note = note_serializer.data
 
-        note_data = {
-            'url': validated_data['note_id']['url'],
-            'research_id_id': validated_data['note_id']['research_id_id'],
-            'user_id_id': validated_data['note_id']['user_id_id'],
-        }
-        if 'note_type' in validated_data['note_id']:
-            note_data['note_type'] = validated_data['note_id']['note_type']
+        new_note = Note()
+        new_note.url = note['url']
+        new_note.rsrch_id_id = note['rsrch_id']
+        new_note.user_id_id = request.user.id
+        if 'note_type' in note:
+            new_note.note_type = note['note_type']
         else:
             pass  # TODO: здесь должно доставаться из латеха
-        new_note = Note.objects.create(**note_data)
 
-        if 'graph_id_id' in validated_data:
-            try:
-                graph = Graph.objects.get(graph_id=validated_data['graph_id_id'])
-            except ObjectDoesNotExist:
-                return Response(status=status.HTTP_404_NOT_FOUND, exception='graph with such graph_id not exists')
+        new_note.save()
 
-            if not graph.node_with_node_id_exists(str(validated_data['node_id'])):
-                return Response(status=status.HTTP_404_NOT_FOUND,
-                                exception='node with such node_id not exists in graph')
+        if 'graph_id' in request.data and 'node_id' in request.data:
+            nodes_notes_rel_serializer.is_valid(raise_exception=True)
+            nnr = nodes_notes_rel_serializer.data
+
+            graph = Graph.objects.get(graph_id=nnr['graph_id'])
+            if not graph.node_with_node_id_exists(str(nnr['node_id'])):
+                raise ValidationError({"node_id": [f"Invalid pk {str(nnr['node_id'])} - object does not exist."]})
 
             notes_nodes_rel_data = NodesNotesRelation(
-                graph_id_id=validated_data['graph_id_id'],
-                node_id=validated_data['node_id'],
+                graph_id_id=nnr['graph_id'],
+                node_id=nnr['node_id'],
                 note_id_id=new_note.note_id,
             )
             notes_nodes_rel_data.save()
 
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+            note_serializer.data['graph_id'] = nnr['graph_id']
+            note_serializer.data['node_id'] = nnr['node_id']
+
+        note_serializer.data['note_id'] = new_note.note_id
+
+        headers = self.get_success_headers(note_serializer.data)
+        return Response(note_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 class GraphDetail(generics.GenericAPIView,

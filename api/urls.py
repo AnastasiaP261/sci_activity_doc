@@ -49,7 +49,7 @@ urlpatterns = [
 
     path(r'note/<int:note_id>/', views.NoteDetail.as_view(),
          name='GET - показ информации о заметке по ее айди, DELETE - удаление заметки'),
-    path(r'note/', views.NoteList.as_view(),
+    path(r'note/', views.NoteCreate.as_view(),
          name='GET - список последних заметок, POST - создание заметки'),
 
     path('graph/<int:graph_id>/node/<int:node_id>/', views.NodeDetail.as_view(),

@@ -42,23 +42,37 @@ class NoteWithoutGraphSerializer(serializers.ModelSerializer):
         }
 
 
-class NoteWithGraphIDSerializer(serializers.Serializer):
-    note_id = serializers.IntegerField(min_value=1, allow_null=False, source='note_id_id', read_only=True)
-    url = serializers.URLField(allow_blank=False, allow_null=False, source='note_id.url', required=True)
-    note_type = serializers.CharField(min_length=2, allow_null=False, allow_blank=False, source='note_id.note_type',
-                                      required=False)
-    created_at = serializers.DateTimeField(allow_null=False, source='note_id.created_at', read_only=True)
-    rsrch_id = serializers.IntegerField(min_value=1, allow_null=False, source='note_id.rsrch_id_id',
-                                        required=True)
-    graph_id = serializers.IntegerField(source='graph_id_id', required=False, allow_null=True)
+class NoteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Note
+        extra_kwargs = {
+            'note_id': {
+                'read_only': True,
+            },
+            'created_at': {
+                'read_only': True,
+            },
+            'user_id': {
+                'read_only': True,
+            },
+            'note_type': {
+                'required': False,
+            },
+        }
+        fields = ('note_id', 'url', 'note_type', 'created_at', 'rsrch_id', 'user_id')
 
 
-class NoteWithAuthorInfoSerializer(NoteWithGraphIDSerializer):
+class NodesNotesRelationCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NodesNotesRelation
+        fields = ('node_id', 'graph_id')
+
+
+class NoteWithAuthorInfoSerializer(NoteSerializer):
     author = CustomUserSerializer(source='note_id.user_id', required=True)
 
 
-class NoteWithAuthorIDAndNodeIDSerializer(NoteWithGraphIDSerializer):
-    author_user_id = serializers.IntegerField(allow_null=False, source='note_id.user_id_id', required=True)
+class NoteWithNodeIDSerializer(NoteSerializer):
     node_id = serializers.CharField(required=False)
 
 
