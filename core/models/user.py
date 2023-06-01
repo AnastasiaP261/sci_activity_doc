@@ -1,9 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-# Прим: ограничение max_length в типе models.TextField используется только тогда,
-# когда поле отображается в формах и сериализаторах (оно не применяется на уровне базы данных)
-
 class User(AbstractUser):
     """
     Перегруженная модель пользователя позволяет добавить собственные настройки модели,

@@ -1,17 +1,17 @@
 import collections
 import json
 
-from django.core.exceptions import ObjectDoesNotExist, BadRequest
-from rest_framework.exceptions import ValidationError, NotFound
+from django.core.exceptions import BadRequest
+from rest_framework.exceptions import ValidationError
 from auth_wrapper.license import IsOwnerObjectOrIsProfessorOrReadOnly, IsProfessorOrReadOnly
 
-from builtins import Exception, KeyError
+from builtins import KeyError
 from django.db import transaction
 from django.http import Http404
-from rest_framework import permissions, generics, mixins, status
+from rest_framework import permissions, generics, status
 from rest_framework.response import Response
 
-from core.models import User, Note, NodesNotesRelation, Graph, Research
+from core.models import NodesNotesRelation, Note, Graph, Research, User
 from . import serializers
 from .pagination import StandardResultsSetPagination
 

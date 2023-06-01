@@ -1,7 +1,7 @@
 from django.db import models
 
-from core.models_graph import Graph
-from core.models_note import Note
+from core.models.graph import Graph
+from core.models.note import Note
 
 
 class NodesNotesRelation(models.Model):

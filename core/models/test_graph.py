@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError, BadRequest, ObjectDoesNotExi
 
 import pydot
 
-from .models_graph import Graph
+from .graph import Graph
 
 
 class TestGraph__dot_to_dict_levels(TestCase):

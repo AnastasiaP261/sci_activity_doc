@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
-from core.models_research import Research
+from core.models.research import Research
 from sci_activity_doc.settings import AUTH_USER_MODEL as user_model
 
 

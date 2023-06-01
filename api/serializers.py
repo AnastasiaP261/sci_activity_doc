@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from core.models import Research, Graph, Note, NodesNotesRelation, User
+from core.models import NodesNotesRelation, Note, Graph, Research, User
 
 
 class UserSerializer(serializers.ModelSerializer):

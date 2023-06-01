@@ -6,7 +6,7 @@ import pydot
 from django.core.exceptions import ValidationError, BadRequest
 from django.db import models
 
-from core.models_research import Research
+from core.models.research import Research
 
 DEFAULT_GRAPH = 'digraph{A;B;A->B;}'
 

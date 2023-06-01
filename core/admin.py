@@ -1,9 +1,5 @@
 from django.contrib import admin
-from .models_nnr import NodesNotesRelation
-from .models_note import Note
-from .models_graph import Graph
-from .models_research import Research
-from .models_user import User
+from core.models import NodesNotesRelation, Note, Graph, Research, User
 from django.contrib.auth.admin import UserAdmin
 
 
