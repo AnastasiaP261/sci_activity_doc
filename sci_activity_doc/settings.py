@@ -149,9 +149,14 @@ LOGIN_REDIRECT_URL = '/'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': ('knox.auth.TokenAuthentication',),
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+        'auth_wrapper.license.IsOwnerObjectOrIsProfessorOrReadOnly',
+        'auth_wrapper.license.IsProfessorOrReadOnly',
+    ],
 }
 
-# позволяет выставлять простые пароли в fixtires_dev и local среде TODO: по умолчанию должны выставляться строгие настройки
+# позволяет выставлять простые пароли в dev и local среде
 if os.environ.get("ENVIRONMENT", default=PROD_ENV) in (LOCAL_ENV, DEV_ENV):
     AUTH_PASSWORD_VALIDATORS = [
         {
@@ -175,6 +180,6 @@ else:
     REST_KNOX = {
         'SECURE_HASH_ALGORITHM': 'cryptography.hazmat.primitives.hashes.SHA512',
         'USER_SERIALIZER': 'api.serializers.CustomUserSerializer',
-        'TOKEN_LIMIT_PER_USER': 2,  # лимит токенов для каждого пользователя
+        'TOKEN_LIMIT_PER_USER': 3,  # лимит токенов для каждого пользователя
         'EXPIRY_DATETIME_FORMAT': api_settings.DATETIME_FORMAT,
     }

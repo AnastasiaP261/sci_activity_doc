@@ -97,11 +97,12 @@ class Research(models.Model):
         """
         return f'{", ".join([str(user.id) for user in self.researchers.all()])}'
 
-    def get_rsrchers_ids_list(self) -> list:
+    def get_user_ids(self) -> tuple:
         """
-         Возвращает список, в котором перечислены id связанных исследователей
+         Возвращает список, в котором перечислены id "владельцев".
+         Этот метод необходим для определения прав доступа пользователя к объекту.
         """
-        return [user.id for user in self.researchers.all()]
+        return tuple([user.id for user in self.researchers.all()])
 
     def get_researchers_names(self) -> str:
         """
@@ -138,6 +139,13 @@ class Graph(models.Model):
             ("can_edit_nodes", "Can edit graph nodes"),
             ("can_add_notes_to", "Can add notes to graph node"),
         )
+
+    def get_user_ids(self) -> tuple:
+        """
+         Возвращает список, в котором перечислены id "владельцев".
+         Этот метод необходим для определения прав доступа пользователя к объекту.
+        """
+        return tuple([user for user in self.rsrch_id.get_user_ids()])
 
     # ПЕРЕОПРЕДЕЛЕННЫЕ МЕТОДЫ
 
@@ -567,6 +575,13 @@ class Note(models.Model):
                                  on_delete=models.CASCADE)
     user_id = models.ForeignKey(user_model, blank=False, on_delete=models.PROTECT)
 
+    def get_user_ids(self) -> tuple:
+        """
+         Возвращает список, в котором перечислены id "владельцев".
+         Этот метод необходим для определения прав доступа пользователя к объекту.
+        """
+        return tuple([user for user in [*self.rsrch_id.get_user_ids(), self.user_id_id]])
+
     def __str__(self) -> str:
         return f"{self.note_id} {self.note_type}"
 
@@ -588,3 +603,10 @@ class NodesNotesRelation(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['note_id', 'graph_id'], name='unique note in graph'),
         ]
+
+    def get_user_ids(self) -> tuple:
+        """
+         Возвращает список, в котором перечислены id "владельцев".
+         Этот метод необходим для определения прав доступа пользователя к объекту.
+        """
+        return tuple([user for user in self.graph_id.get_user_ids()])

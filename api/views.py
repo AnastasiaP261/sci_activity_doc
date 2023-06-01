@@ -28,7 +28,7 @@ class ResearcherList(generics.ListAPIView):
     """
     serializer_class = serializers.UserSerializer
     pagination_class = StandardResultsSetPagination
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerObjectOrIsProfessorOrReadOnly]
 
     def get_queryset(self):
         try:
@@ -78,46 +78,32 @@ class NoteDetail(generics.RetrieveAPIView,
     lookup_url_kwarg = 'note_id'
     lookup_field = 'note_id'
     serializer_class = serializers.NoteWithAuthorInfoSerializer
-
-    def get_permissions(self):
-        permission_classes: list
-        if self.request.method == GET_METHOD:
-            permission_classes = [permissions.IsAuthenticated]
-
-        if self.request.method == DELETE_METHOD:
-            permission_classes = [permissions.IsAuthenticated, IsOwnerObjectOrIsProfessorOrReadOnly]
-
-        return [permission() for permission in permission_classes]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerObjectOrIsProfessorOrReadOnly]
 
     def get_object(self):
         try:
             note_id = int(self.kwargs.get(self.lookup_url_kwarg, 0))
             if self.request.method == GET_METHOD:
-                notes = Note.objects.\
-                    prefetch_related('user_id').\
+                note = Note.objects. \
+                    prefetch_related('user_id'). \
+                    prefetch_related('nodesnotesrelation_set'). \
                     get(note_id=note_id)
-                nodes_notes_relations = NodesNotesRelation.objects.\
-                    filter(note_id_id=note_id)
-
-                return notes, nodes_notes_relations
 
             elif self.request.method == DELETE_METHOD:
                 note = Note.objects.get(note_id=note_id)
-                return note
+
+            else:
+                BadRequest()
+
+            self.check_object_permissions(self.request, note)
+            return note
 
         except Note.DoesNotExist:
             raise Http404()
 
-    def get_serializer(self, *args, **kwargs):
-        note_serializer = serializers.NoteWithAuthorInfoSerializer
-        nnr_serializer = serializers.NodesNotesRelationSerializer
-
-        kwargs.setdefault('context', self.get_serializer_context())
-        return serializer(*args, **kwargs)
-
     def retrieve(self, request, *args, **kwargs):
-        notes, nnr = self.get_object()
-        serializer = self.get_serializer(notes)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
 
         data = serializer.data
         if data['author']['surname']:
@@ -198,8 +184,7 @@ class GraphDetail(generics.RetrieveAPIView,
                   generics.DestroyAPIView):
     lookup_url_kwarg = 'graph_id'
     lookup_field = 'graph_id'
-
-    # permission_classes = [permissions.IsAuthenticated] TODO: включи
+    permission_classes = [permissions.IsAuthenticated, IsOwnerObjectOrIsProfessorOrReadOnly]
 
     def get_object(self):
         try:
@@ -209,10 +194,14 @@ class GraphDetail(generics.RetrieveAPIView,
                 graph = Graph.objects.get(graph_id=graph_id)
                 nodes = NodesNotesRelation.objects.filter(graph_id=graph_id)
 
+                self.check_object_permissions(self.request, graph)
+
                 return graph, nodes
 
             if self.request.method in (DELETE_METHOD, PATCH_METHOD):
                 graph = Graph.objects.get(graph_id=graph_id)
+
+                self.check_object_permissions(self.request, graph)
 
                 return graph
 
@@ -302,32 +291,49 @@ class GraphDetail(generics.RetrieveAPIView,
 
 class CreateGraph(generics.CreateAPIView):
     serializer_class = serializers.GraphSerializer
+    permission_classes = [permissions.IsAuthenticated, IsOwnerObjectOrIsProfessorOrReadOnly]
 
 
 class NodeDetail(generics.ListAPIView):
-    # permission_classes = [permissions.IsAuthenticated] TODO: включи
-    serializer_class = serializers.NoteWithAuthorInfoSerializer
+    permission_classes = [permissions.IsAuthenticated, IsOwnerObjectOrIsProfessorOrReadOnly]
+    serializer_class = serializers.NoteWithoutGraphInfoSerializer
 
     def get_queryset(self):
         try:
             graph_id = int(self.kwargs.get('graph_id', 0))
             node_id = self.kwargs.get('node_id', '')
 
-            obj = NodesNotesRelation.objects.filter(graph_id=graph_id, node_id=node_id).prefetch_related(
-                'note_id').order_by('note_id__created_at')
-            return obj
-        except NodesNotesRelation.DoesNotExist:
+            notes = Note.objects. \
+                prefetch_related('nodesnotesrelation_set'). \
+                filter(nodesnotesrelation__graph_id_id=graph_id, nodesnotesrelation__node_id=node_id). \
+                order_by('created_at')
+
+            return notes
+
+        except (NodesNotesRelation.DoesNotExist, Note.DoesNotExist):
             raise Http404()
 
 
 class ResearchDetail(generics.RetrieveAPIView,
                      generics.UpdateAPIView,
                      generics.DestroyAPIView):
-    # permission_classes = [permissions.IsAuthenticated] TODO: включи
+    permission_classes = [permissions.IsAuthenticated, IsOwnerObjectOrIsProfessorOrReadOnly]
     lookup_url_kwarg = 'rsrch_id'
 
     def get_permissions(self):
-        return [permission() for permission in self.permission_classes]
+        def get_classes():
+            if self.request.method == GET_METHOD:
+                return [permissions.IsAuthenticated]
+
+            elif self.request.method == DELETE_METHOD:
+                return [permissions.IsAuthenticated, IsProfessorOrReadOnly]
+
+            elif self.request.method == PATCH_METHOD:
+                if 'researchers' in self.request.data:
+                    return [permissions.IsAuthenticated, IsProfessorOrReadOnly]
+                return [permissions.IsAuthenticated, IsOwnerObjectOrIsProfessorOrReadOnly]
+
+        return [permission() for permission in get_classes()]
 
     def get_object(self):
         try:
@@ -342,11 +348,15 @@ class ResearchDetail(generics.RetrieveAPIView,
                 notes_without_graph = Note.objects. \
                     filter(rsrch_id=rsrch_id, nodesnotesrelation__graph_id_id__isnull=True)
 
+                self.check_object_permissions(self.request, research)
+
                 return research, graphs, notes_without_graph
 
             elif self.request.method in (DELETE_METHOD, PATCH_METHOD):
                 research = Research.objects. \
                     get(pk=rsrch_id)
+
+                self.check_object_permissions(self.request, research)
 
                 return research
 
@@ -373,7 +383,7 @@ class ResearchDetail(generics.RetrieveAPIView,
         g_serializer = serializers.GraphTitleUpdateSerializer(graphs, many=True)
         graphs = g_serializer.data
 
-        n_serializer = serializers.NoteWithoutGraphSerializer(notes_without_graph, many=True, required=False)
+        n_serializer = serializers.NoteWithoutGraphInfoSerializer(notes_without_graph, many=True, required=False)
         notes_without_graph = n_serializer.data
 
         kwargs.setdefault('context', self.get_serializer_context())
@@ -387,7 +397,7 @@ class ResearchDetail(generics.RetrieveAPIView,
     @transaction.atomic()
     def destroy(self, request, *args, **kwargs):
         # по инструкциям CASCADE, здесь удалятся также записи всех связанных Graphs и NodesNotesRelations
-        return super().destroy(*args, **kwargs)
+        return super().destroy(request, *args, **kwargs)
 
     def patch(self, request, *args, **kwargs):
         return self.partial_update(request, *args, **kwargs)
@@ -396,8 +406,7 @@ class ResearchDetail(generics.RetrieveAPIView,
 class ResearchList(generics.CreateAPIView,
                    generics.ListAPIView):
     pagination_class = StandardResultsSetPagination
-
-    # permission_classes = [permissions.IsAuthenticated] TODO: включи
+    permission_classes = [permissions.IsAuthenticated, IsProfessorOrReadOnly]
 
     def get_serializer(self, *args, **kwargs):
         if self.request.method == GET_METHOD:

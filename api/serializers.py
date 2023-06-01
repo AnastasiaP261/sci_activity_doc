@@ -24,7 +24,7 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
 
-class NoteWithoutGraphSerializer(serializers.ModelSerializer):
+class NoteWithoutGraphInfoSerializer(serializers.ModelSerializer):
     rsrch_id = serializers.IntegerField(min_value=1, allow_null=False, source='rsrch_id_id', read_only=True)
     user_id = serializers.IntegerField(min_value=1, allow_null=False, source='user_id_id')
 
@@ -65,16 +65,11 @@ class NodesNotesRelationSerializer(serializers.ModelSerializer):
             },
         }
 
-class NodesNotesRelationWithNoteInfoSerializer(serializers.ModelSerializer):
-    notes = NoteSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = NodesNotesRelation
-        fields = ('node_id', 'graph_id', 'notes')
-
 
 class NoteWithAuthorInfoSerializer(serializers.ModelSerializer):
     author = UserSerializer(source='user_id', read_only=True)
+    graphs_info = NodesNotesRelationSerializer(required=False, many=True, source='nodesnotesrelation_set')
+
     class Meta:
         model = Note
         extra_kwargs = {
@@ -88,7 +83,7 @@ class NoteWithAuthorInfoSerializer(serializers.ModelSerializer):
                 'required': False,
             },
         }
-        fields = ('note_id', 'url', 'note_type', 'created_at', 'rsrch_id', 'author')
+        fields = ('note_id', 'url', 'note_type', 'created_at', 'rsrch_id', 'author', 'graphs_info')
 
 
 class GraphSerializer(serializers.ModelSerializer):
@@ -220,8 +215,7 @@ class ResearchSerializer(serializers.ModelSerializer):
 class ResearchCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Research
-        fields = (
-            'rsrch_id', 'title', 'description', 'start_date', 'end_date')
+        fields = ('rsrch_id', 'title', 'description', 'start_date', 'end_date')
 
 
 class ResearchUpdateSerializer(serializers.ModelSerializer):
