@@ -1,11 +1,7 @@
-from django.shortcuts import render
 from django.contrib.auth import login
-from rest_framework import permissions, generics
-from rest_framework.authtoken.serializers import AuthTokenSerializer
 from knox.views import LoginView as KnoxLoginView
-
-from api.serializers import UserSerializer
-from core.models import User
+from rest_framework import permissions
+from rest_framework.authtoken.serializers import AuthTokenSerializer
 
 
 class LoginView(KnoxLoginView):

@@ -13,15 +13,9 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.urls import include, path
-from django.urls import re_path  # тот же path, только умеет в регулярки
-from django.conf import urls
-from django.views.generic import TemplateView
-from rest_framework import routers, permissions
-from drf_yasg.views import get_schema_view
-from drf_yasg import openapi
-
+from django.urls import path
 from knox import views as knox_views
+
 from .views import LoginView
 
 urlpatterns = [

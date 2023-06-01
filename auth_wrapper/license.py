@@ -11,11 +11,11 @@ class IsOwnerResearchOrIsProfessorOrReadOnly(BasePermission):
     Это гарантирует, что исследователь и преподаватели - единственные, кто может изменить данные исследования.
     """
 
-    def has_object_permission(self, request, view, obj: dict):
+    def has_object_permission(self, request, view, obj):
         if request.method in SAFE_METHODS:
             return True
 
-        is_owner = obj["user_id"] == request.user
+        is_owner = obj.get_user_id() == request.user.id
 
         is_prof = False
         for g in request.user.get_groups_list():
