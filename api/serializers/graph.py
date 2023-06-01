@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from api.serializers import NodeMetadataUpdateSerializer
+from api.serializers.note_and_node import NodeMetadataUpdateSerializer
 from core.models import Graph
 
 

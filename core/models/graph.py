@@ -30,6 +30,9 @@ class Graph(models.Model):
             ("can_add_notes_to", "Can add notes to graph node"),
         )
 
+    rsrch_id.short_description = u'researchers'
+    data.short_description = u'DOT-data'
+
     def get_user_ids(self) -> tuple:
         """
          Возвращает список, в котором перечислены id "владельцев".

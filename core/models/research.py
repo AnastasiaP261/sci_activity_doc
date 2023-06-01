@@ -24,6 +24,7 @@ class Research(models.Model):
             ("can_add_researchers_to", "Can add researchers to research"),
             ("can_add_graphs_to", "Can add graphs to research"),
         )
+        verbose_name_plural = 'Researches'
 
     def get_rsrchers_ids(self) -> str:
         """
@@ -38,6 +39,7 @@ class Research(models.Model):
         """
         return tuple([user.id for user in self.researchers.all()])
 
+
     def get_researchers_names(self) -> str:
         """
         Возвращает строку, в которой перечислены Фамилия И.О. связанных исследователей
@@ -45,8 +47,8 @@ class Research(models.Model):
         """
         return f'{", ".join([user.get_short_full_name() for user in self.researchers.all()])}'
 
-    get_rsrchers_ids.short_description = u'rsrchers_ids'
-    get_researchers_names.short_description = u'researchers_names'
+    get_rsrchers_ids.short_description = u'researcher ids'
+    get_researchers_names.short_description = u'researcher names'
 
     def __str__(self) -> str:
         return f'({self.rsrch_id}) {self.title.__str__()}'

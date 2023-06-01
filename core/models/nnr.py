@@ -21,6 +21,10 @@ class NodesNotesRelation(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['note_id', 'graph_id'], name='unique note in graph'),
         ]
+        verbose_name = 'Node-Notes relation'
+        verbose_name_plural = 'Node-Notes relations'
+    graph_id.short_description=u'graph'
+    note_id.short_description=u'note'
 
     def get_user_ids(self) -> tuple:
         """

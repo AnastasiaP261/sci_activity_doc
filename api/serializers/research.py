@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from api.serializers import UserSerializer
+from api.serializers.user import UserSerializer
 from core.models import Research
 
 

@@ -25,6 +25,8 @@ class Note(models.Model):
          Этот метод необходим для определения прав доступа пользователя к объекту.
         """
         return tuple([user for user in [*self.rsrch_id.get_user_ids(), self.user_id_id]])
+    rsrch_id.short_description=u'research'
+    user_id.short_description=u'user'
 
     def __str__(self) -> str:
         return f"{self.note_id} {self.note_type}"
