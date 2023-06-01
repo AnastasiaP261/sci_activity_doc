@@ -3,6 +3,7 @@ import json
 
 from django.core.exceptions import ObjectDoesNotExist, BadRequest
 from rest_framework.exceptions import ValidationError, NotFound
+from auth_wrapper.license import IsOwnerObjectOrIsProfessorOrReadOnly, IsProfessorOrReadOnly
 
 from builtins import Exception, KeyError
 from django.db import transaction
@@ -27,8 +28,7 @@ class ResearcherList(generics.ListAPIView):
     """
     serializer_class = serializers.UserSerializer
     pagination_class = StandardResultsSetPagination
-
-    # permission_classes = [permissions.IsAuthenticated] TODO: включи
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         try:
@@ -72,37 +72,52 @@ class UserDetail(generics.RetrieveAPIView):
         except User.DoesNotExist:
             raise Http404()
 
+
 class NoteDetail(generics.RetrieveAPIView,
                  generics.DestroyAPIView):
     lookup_url_kwarg = 'note_id'
     lookup_field = 'note_id'
+    serializer_class = serializers.NoteWithAuthorInfoSerializer
 
-    # permission_classes = [permissions.IsAuthenticated] TODO: включи
+    def get_permissions(self):
+        permission_classes: list
+        if self.request.method == GET_METHOD:
+            permission_classes = [permissions.IsAuthenticated]
+
+        if self.request.method == DELETE_METHOD:
+            permission_classes = [permissions.IsAuthenticated, IsOwnerObjectOrIsProfessorOrReadOnly]
+
+        return [permission() for permission in permission_classes]
 
     def get_object(self):
         try:
             note_id = int(self.kwargs.get(self.lookup_url_kwarg, 0))
             if self.request.method == GET_METHOD:
-                nodes_notes_relations = NodesNotesRelation.objects.prefetch_related('note_id__user_id').get(
-                    note_id=note_id)
-                return nodes_notes_relations
+                notes = Note.objects.\
+                    prefetch_related('user_id').\
+                    get(note_id=note_id)
+                nodes_notes_relations = NodesNotesRelation.objects.\
+                    filter(note_id_id=note_id)
+
+                return notes, nodes_notes_relations
 
             elif self.request.method == DELETE_METHOD:
                 note = Note.objects.get(note_id=note_id)
                 return note
 
-        except (Note.DoesNotExist, NodesNotesRelation.DoesNotExist):
+        except Note.DoesNotExist:
             raise Http404()
 
     def get_serializer(self, *args, **kwargs):
-        serializer = serializers.NoteWithAuthorInfoSerializer
+        note_serializer = serializers.NoteWithAuthorInfoSerializer
+        nnr_serializer = serializers.NodesNotesRelationSerializer
 
         kwargs.setdefault('context', self.get_serializer_context())
         return serializer(*args, **kwargs)
 
     def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
+        notes, nnr = self.get_object()
+        serializer = self.get_serializer(notes)
 
         data = serializer.data
         if data['author']['surname']:
@@ -128,7 +143,7 @@ class NoteDetail(generics.RetrieveAPIView,
 
 class NoteCreate(generics.CreateAPIView):
     pagination_class = StandardResultsSetPagination
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerObjectOrIsProfessorOrReadOnly]
 
     def get_serializer(self, *args, **kwargs):
         note_serializer = serializers.NoteSerializer
@@ -311,7 +326,7 @@ class ResearchDetail(generics.RetrieveAPIView,
     # permission_classes = [permissions.IsAuthenticated] TODO: включи
     lookup_url_kwarg = 'rsrch_id'
 
-    def get_permissions(self):  # надо добавить всюду: добавить доступ только для препода
+    def get_permissions(self):
         return [permission() for permission in self.permission_classes]
 
     def get_object(self):

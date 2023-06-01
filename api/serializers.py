@@ -1,6 +1,6 @@
 from rest_framework import serializers
+
 from core.models import Research, Graph, Note, NodesNotesRelation, User
-from rest_framework.validators import UniqueTogetherValidator
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -48,14 +48,11 @@ class NoteSerializer(serializers.ModelSerializer):
             'created_at': {
                 'read_only': True,
             },
-            'user_id': {
-                'read_only': True,
-            },
             'note_type': {
                 'required': False,
             },
         }
-        fields = ('note_id', 'url', 'note_type', 'created_at', 'rsrch_id', 'user_id')
+        fields = ('note_id', 'url', 'note_type', 'created_at', 'rsrch_id')
 
 
 class NodesNotesRelationSerializer(serializers.ModelSerializer):
@@ -68,9 +65,30 @@ class NodesNotesRelationSerializer(serializers.ModelSerializer):
             },
         }
 
+class NodesNotesRelationWithNoteInfoSerializer(serializers.ModelSerializer):
+    notes = NoteSerializer(many=True, read_only=True)
 
-class NoteWithAuthorInfoSerializer(NoteSerializer):
-    author = UserSerializer(source='note_id.user_id', required=True)
+    class Meta:
+        model = NodesNotesRelation
+        fields = ('node_id', 'graph_id', 'notes')
+
+
+class NoteWithAuthorInfoSerializer(serializers.ModelSerializer):
+    author = UserSerializer(source='user_id', read_only=True)
+    class Meta:
+        model = Note
+        extra_kwargs = {
+            'note_id': {
+                'read_only': True,
+            },
+            'created_at': {
+                'read_only': True,
+            },
+            'note_type': {
+                'required': False,
+            },
+        }
+        fields = ('note_id', 'url', 'note_type', 'created_at', 'rsrch_id', 'author')
 
 
 class GraphSerializer(serializers.ModelSerializer):
