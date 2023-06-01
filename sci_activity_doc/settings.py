@@ -167,7 +167,7 @@ if os.environ.get("ENVIRONMENT", default=PROD_ENV) in (LOCAL_ENV, DEV_ENV):
     REST_KNOX = {
         # MD5 is not secure and must never be used in production sites
         'SECURE_HASH_ALGORITHM': 'cryptography.hazmat.primitives.hashes.MD5',
-        'USER_SERIALIZER': 'api.serializers.CustomUserSerializer',
+        'USER_SERIALIZER': 'api.serializers.UserSerializer',
         'TOKEN_LIMIT_PER_USER': None,  # лимит токенов для каждого пользователя
         'EXPIRY_DATETIME_FORMAT': api_settings.DATETIME_FORMAT,
     }

@@ -3,7 +3,7 @@ from core.models import Research, Graph, Note, NodesNotesRelation, User
 from rest_framework.validators import UniqueTogetherValidator
 
 
-class CustomUserSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     groups = serializers.ListField(
         child=serializers.CharField(min_length=1),
         allow_empty=True,
@@ -22,10 +22,6 @@ class CustomUserSerializer(serializers.ModelSerializer):
                 'read_only': True,
             },
         }
-
-
-class UserIDSerializer(serializers.Serializer):
-    username = serializers.CharField()
 
 
 class NoteWithoutGraphSerializer(serializers.ModelSerializer):
@@ -62,33 +58,22 @@ class NoteSerializer(serializers.ModelSerializer):
         fields = ('note_id', 'url', 'note_type', 'created_at', 'rsrch_id', 'user_id')
 
 
-class NodesNotesRelationCreateSerializer(serializers.ModelSerializer):
+class NodesNotesRelationSerializer(serializers.ModelSerializer):
     class Meta:
         model = NodesNotesRelation
-        fields = ('node_id', 'graph_id')
+        fields = ('node_id', 'graph_id', 'note_id')
+        extra_kwargs = {
+            'note_id': {
+                'read_only': True,
+            },
+        }
 
 
 class NoteWithAuthorInfoSerializer(NoteSerializer):
-    author = CustomUserSerializer(source='note_id.user_id', required=True)
-
-
-class NoteWithNodeIDSerializer(NoteSerializer):
-    node_id = serializers.CharField(required=False)
-
-
-class NodesNotesRelationSerializer(serializers.ModelSerializer):
-    note_id = serializers.IntegerField(min_value=1, allow_null=False, source='note_id_id', read_only=True)
-    graph_id = serializers.IntegerField(min_value=1, allow_null=False, source='graph_id_id', read_only=True)
-
-    class Meta:
-        model = NodesNotesRelation
-        lookup_field = 'graph_id'
-        fields = ['node_id', 'note_id', 'graph_id']
+    author = UserSerializer(source='note_id.user_id', required=True)
 
 
 class GraphSerializer(serializers.ModelSerializer):
-    rsrch_id = serializers.IntegerField(min_value=1, allow_null=False, source='rsrch_id_id')
-
     raw_data = serializers.CharField(allow_null=False, allow_blank=False, source='data', read_only=True)
 
     levels = serializers.JSONField(read_only=True, source='dot_to_json_levels')
@@ -98,7 +83,6 @@ class GraphSerializer(serializers.ModelSerializer):
         model = Graph
         lookup_field = 'graph_id'
         fields = ['graph_id', 'title', 'rsrch_id', 'raw_data', 'levels', 'nodes_metadata']
-
         extra_kwargs = {
             'graph_id': {
                 'read_only': True,
@@ -106,17 +90,19 @@ class GraphSerializer(serializers.ModelSerializer):
         }
 
 
-class GraphLevelsSerializer(serializers.ModelSerializer):
-    levels = serializers.JSONField(allow_null=False, read_only=True, source='dot_to_json_levels')
+class GraphLevelsUpdateSerializer(serializers.ModelSerializer):
+    levels = serializers.JSONField(allow_null=False, source='dot_to_json_levels')
 
     def update(self, instance, validated_data):
-        return super().update(instance, validated_data)
+        if 'levels' in validated_data:
+            instance.rewrite_graph_schema(validated_data.get('levels'))
+            instance.save()
+        return instance
 
     class Meta:
         model = Graph
         lookup_field = 'graph_id'
         fields = ['graph_id', 'levels']
-
         extra_kwargs = {
             'graph_id': {
                 'read_only': True,
@@ -124,11 +110,15 @@ class GraphLevelsSerializer(serializers.ModelSerializer):
         }
 
 
-class NodeMetadataSerializer(serializers.Serializer):
+class NodeMetadataUpdateSerializer(serializers.Serializer):
     is_subgraph = serializers.BooleanField(allow_null=False)
-    subgraph_graph_id = serializers.IntegerField(min_value=0)
-    notes_ids = serializers.ListField(child=serializers.IntegerField(min_value=0), allow_empty=True, allow_null=False)
+    subgraph_graph_id = serializers.IntegerField(min_value=0, allow_null=False)
+    notes_ids = serializers.ListField(child=serializers.IntegerField(min_value=0), required=False, allow_empty=True)
     title = serializers.CharField(allow_null=False, allow_blank=True)
+
+    def update(self, instance, validated_data):
+        # потому что обновление происходит через наследника (см GraphMetadataUpdateSerializer)
+        pass
 
     def validate_subgraph_graph_id(self, value):
         if value < 0:
@@ -137,17 +127,27 @@ class NodeMetadataSerializer(serializers.Serializer):
         if not Graph.objects.filter(graph_id=value).exists():
             raise serializers.ValidationError("there is no graph with such id")
 
+        return value
+
     def validate_notes_ids(self, value):
         if len(value) > 0:
             if not Note.objects.filter(pk__in=value).exists():
                 raise serializers.ValidationError("no notes with such ids")
+        return value
 
 
-class GraphMetadataSerializer(serializers.ModelSerializer):
-    node_metadata = NodeMetadataSerializer()
+class GraphMetadataUpdateSerializer(serializers.ModelSerializer):
+    node_metadata = NodeMetadataUpdateSerializer()
     node_id = serializers.CharField(allow_null=False, allow_blank=False)
 
     def update(self, instance, validated_data):
+        if 'node_id' in validated_data and 'node_metadata' in validated_data:
+            instance.rewrite_node_metadata(
+                validated_data.get('node_id'),
+                validated_data.get('node_metadata'),
+            )
+            instance.save()
+
         return super().update(instance, validated_data)
 
     class Meta:
@@ -162,7 +162,14 @@ class GraphMetadataSerializer(serializers.ModelSerializer):
         }
 
 
-class GraphNameSerializer(serializers.ModelSerializer):
+class GraphTitleUpdateSerializer(serializers.ModelSerializer):
+
+    def update(self, instance, validated_data):
+        if 'title' in validated_data:
+            instance.title = validated_data.get('title')
+            instance.save()
+        return instance
+
     class Meta:
         model = Graph
         lookup_field = 'graph_id'
@@ -176,7 +183,7 @@ class GraphNameSerializer(serializers.ModelSerializer):
 
 
 class ResearchSerializer(serializers.ModelSerializer):
-    researchers = CustomUserSerializer(many=True, allow_null=False, read_only=True)
+    researchers = UserSerializer(many=True, allow_null=False, read_only=True)
 
     class Meta:
         model = Research

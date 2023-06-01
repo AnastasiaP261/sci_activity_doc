@@ -140,7 +140,7 @@ class Graph(models.Model):
         )
 
     # ПЕРЕОПРЕДЕЛЕННЫЕ МЕТОДЫ
-    
+
     def delete(self, using=None, keep_parents=False):
         return super().delete(using, keep_parents)
 
@@ -329,37 +329,37 @@ class Graph(models.Model):
             old_metadata[key] = new_val
             return old_metadata
 
-        # если узел уже был подграфом и ему меняют айди
-        if 'subgraph' in old_metadata and \
-                new_matadata['is_subgraph'] == True and \
-                new_matadata['subgraph_graph_id'] != old_metadata['subgraph']:
+        was_subgraph = int(old_metadata.get('subgraph', 0)) != 0
+        make_subgraph = new_matadata['is_subgraph']
+        change_id = make_subgraph and \
+                    int(new_matadata.get('subgraph_graph_id', 0)) != int(old_metadata.get('subgraph', 0))
 
+        # если узел уже был подграфом и ему меняют айди
+        if was_subgraph and change_id:
             return edit('subgraph', new_matadata['subgraph_graph_id'])
 
         # если узел не был подграфом и его делают подграфом
-        elif 'subgraph' not in old_metadata and \
-                new_matadata['is_subgraph'] == True:
-
-            if len(new_matadata[
-                       'notes_ids']) != 0:  # нельзя переопределить узел как подграф, пока к нему привязаны заметки
+        elif not was_subgraph and make_subgraph:
+            # нельзя переопределить узел как подграф, пока к нему привязаны заметки
+            if new_matadata['notes_ids']:
                 raise BadRequest()
 
             return edit('subgraph', new_matadata['subgraph_graph_id'])
 
-        elif 'title' not in old_metadata or \
-                old_metadata['title'] != new_matadata['title']:
+        # если узел был подграфом и его делают не подграфом
+        elif was_subgraph and not make_subgraph:
+            return edit('subgraph', '0')
 
-            return edit('title', new_matadata['title'].replace(' ', '_'))
+        elif old_metadata.get('title', '') != new_matadata['title'].strip():
+            return edit('title', new_matadata['title'].replace(' ', '_').strip())
 
         else:
             raise BadRequest()
 
     def rewrite_node_metadata(self, node_id: str, req_matadata: dict):
+        self._data_to_dot()
         new_matadata = self._rewrite_node_metadata(node_id, req_matadata)
-        for i, node in enumerate(self._get_dot().get_nodes()):
-            if node.get_name() == node_id:
-                self._get_dot().get_nodes()[i].obj_dict['attributes'] = new_matadata
-
+        self._dot.obj_dict['nodes'][node_id][0]['attributes'] = new_matadata
         self._dot_to_data()
 
     def node_with_node_id_exists(self, node_id: str) -> bool:  # TODO: need tests
@@ -374,9 +374,9 @@ class Graph(models.Model):
 
         metadata = dict()
         for node in nodes:
-            attrs = node.obj_dict['attributes']
-            if 'subgraph' in attrs:
-                attrs['subgraph'] = int(attrs['subgraph'])
+            attrs = dict()
+            attrs['subgraph'] = int(node.obj_dict['attributes'].get('subgraph', 0))
+            attrs['title'] = node.obj_dict['attributes'].get('title', '').replace('_', ' ').replace('"', '')
             metadata[node.obj_dict['name']] = attrs
 
         return metadata

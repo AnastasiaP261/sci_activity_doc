@@ -426,7 +426,7 @@ class TestGraph__get_nodes_metadata(TestCase):
                     1 [subgraph=123, title=Cool_node]; 
                     2 ; 
                     3 []; 
-                    B; 
+                    B [title="Finish"]; 
                     A -> 1; 
                     1 -> 2; 
                     2 -> 3; 
@@ -437,11 +437,11 @@ class TestGraph__get_nodes_metadata(TestCase):
         self.assertDictEqual(
             graph._get_nodes_metadata_dict(),
             {
-                'A': {},
-                '1': {'subgraph': 123, 'title': 'Cool_node'},
-                '2': {},
-                '3': {},
-                'B': {},
+                'A': {'subgraph': 0, 'title': ''},
+                '1': {'subgraph': 123, 'title': 'Cool node'},
+                '2': {'subgraph': 0, 'title': ''},
+                '3': {'subgraph': 0, 'title': ''},
+                'B': {'subgraph': 0, 'title': 'Finish'},
             },
             msg='получение метаданных узлов',
         )
@@ -508,7 +508,7 @@ class TestGraph__rewrite_node_metadata(TestCase):
         )
 
         self.assertEqual(
-            graph._rewrite_node_metadata('1', {'is_subgraph': True, 'subgraph_graph_id': 345,'notes_ids': []}),
+            graph._rewrite_node_metadata('1', {'is_subgraph': True, 'subgraph_graph_id': 345, 'notes_ids': []}),
             {'subgraph': 345},
             msg='изменение айди подграфа'
         )
@@ -527,7 +527,7 @@ class TestGraph__rewrite_node_metadata(TestCase):
         )
 
         self.assertEqual(
-            graph._rewrite_node_metadata('1', {'is_subgraph': True, 'subgraph_graph_id': 123,'notes_ids': []}),
+            graph._rewrite_node_metadata('1', {'is_subgraph': True, 'subgraph_graph_id': 123, 'notes_ids': []}),
             {'subgraph': 123},
             msg='успешное изменение типа узла на "подграф"'
         )
@@ -548,7 +548,7 @@ class TestGraph__rewrite_node_metadata(TestCase):
         with self.assertRaises(
                 expected_exception=BadRequest,
                 msg='нельзя изменить тип узла на "подграф", если к узлу привязаны заметки'):
-            graph._rewrite_node_metadata('1', {'is_subgraph': True, 'subgraph_graph_id': 123, 'notes_ids': [1, 2]},)
+            graph._rewrite_node_metadata('1', {'is_subgraph': True, 'subgraph_graph_id': 123, 'notes_ids': [1, 2]}, )
 
     def test_edit_node_title(self):
         graph = Graph(

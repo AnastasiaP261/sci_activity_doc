@@ -55,7 +55,7 @@ urlpatterns = [
     path('graph/<int:graph_id>/node/<int:node_id>/', views.NodeDetail.as_view(),
          name='GET - просмотр информации об узле графа'),
     path('graph/<int:graph_id>/', views.GraphDetail.as_view(),
-         name='GET - показ информации о графе по его айди, DELETE - удаление графа, PATCH - обновление информации в графе'),
+         name='GET - показ информации о графе по его айди, DELETE - удаление графа, PATCH - обновление информации в графе'), # TODO обязательно запиши что отсюда нельзя поменять набор заметок
     path('graph/', views.CreateGraph.as_view(),
          name='POST - создание графа'),
 
