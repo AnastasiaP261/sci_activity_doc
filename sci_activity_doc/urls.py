@@ -22,9 +22,4 @@ from api import urls as api_urls
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(api_urls)),
-    # path('accounts/', include('django.contrib.auth.urls')),
-
-    # # path to djoser end points
-    # path('auth/', include('djoser.urls')),
-    # path('auth/', include('djoser.urls.jwt')),
 ]
