@@ -183,3 +183,28 @@ else:
         'TOKEN_LIMIT_PER_USER': 3,  # лимит токенов для каждого пользователя
         'EXPIRY_DATETIME_FORMAT': api_settings.DATETIME_FORMAT,
     }
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'sqlhandler': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'sqlformatter'
+        }
+    },
+    'formatters': {
+        'sqlformatter': {
+            '()': 'ddquery.SqlFormatter',
+            'format': '%(levelname)s %(message)s',
+            'reindent': False,
+        },
+    },
+    'loggers': {
+        'django.db.backends': {
+            'handlers': ['sqlhandler'],
+            'level': 'DEBUG',
+        },
+    }
+}
