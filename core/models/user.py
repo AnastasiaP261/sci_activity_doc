@@ -1,5 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+import computed_property
+
 
 class User(AbstractUser):
     """
@@ -10,6 +12,12 @@ class User(AbstractUser):
     surname = models.CharField("surname", max_length=150, blank=True)
     last_name = models.CharField("last_name", max_length=150, blank=False)
     study_group = models.CharField("study_group", max_length=15, blank=True)
+
+    computed_full_name = computed_property.ComputedCharField(
+        compute_from='get_full_name',
+        help_text='вычисляемое поле, на основе которого строится индекс для поисковых подсказок',
+        max_length=200,
+    )
 
     def get_full_name(self) -> str:
         """

@@ -47,11 +47,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'drf_yasg',  # генератор swagger -- см. https://github.com/axnsan12/drf-yasg/
     'api.apps.ApiConfig',
     'core.apps.CoreConfig',
     'auth_wrapper.apps.AuthWrapperConfig',
-    'knox',
+    'knox',  # токенная авторизация
+    'computed_property',  # возможность создавать вычисляемые поля и хранить их в базе
+    'django_filters',  # search suggestions
 ]
 
 MIDDLEWARE = [

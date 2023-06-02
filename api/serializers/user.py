@@ -22,3 +22,9 @@ class UserSerializer(serializers.ModelSerializer):
                 'read_only': True,
             },
         }
+
+
+class UserSuggestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'computed_full_name')

@@ -10,4 +10,5 @@ from .note_and_node import NoteWithoutGraphInfoSerializer, \
     NodesNotesRelationSerializer, \
     NoteWithAuthorInfoSerializer, \
     NodeMetadataUpdateSerializer
-from .user import UserSerializer
+from .user import UserSerializer, \
+    UserSuggestSerializer

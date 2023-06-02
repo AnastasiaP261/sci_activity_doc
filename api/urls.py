@@ -25,6 +25,8 @@ urlpatterns = [
     path('researcher/', views.ResearcherList.as_view(),
          name='Возвращает список исследователей, отсортированных по ФИО. '
               'В конце списка будут присутствовать "архивные" пользователи.'),
+    path('user/suggestions/', views.UserSuggestions.as_view({'get': 'list'}),
+         name='GET - возвращает подсказки для поиска пользователя по имени'),
 
     path(r'note/<int:note_id>/', views.NoteDetail.as_view(),
          name='GET - показ информации о заметке по ее айди, DELETE - удаление заметки'),

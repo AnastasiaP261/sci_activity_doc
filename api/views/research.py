@@ -107,7 +107,9 @@ class ResearchDetail(generics.RetrieveAPIView,
 class ResearchList(generics.CreateAPIView,
                    generics.ListAPIView):
     pagination_class = StandardResultsSetPagination
-    permission_classes = [permissions.IsAuthenticated, IsProfessorOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, IsProfessorOrReadOnly]\
+    filter_backends = [filters.SearchFilter, ]
+
 
     def get_serializer(self, *args, **kwargs):
         if self.request.method == GET_METHOD:
