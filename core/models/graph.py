@@ -1,6 +1,7 @@
 import collections
 import json
 import re
+from typing import Dict, List, Tuple, Set
 
 import pydot
 from django.core.exceptions import ValidationError, BadRequest
@@ -13,7 +14,8 @@ DEFAULT_GRAPH = 'digraph{A;B;A->B;}'
 
 class Graph(models.Model):
     """
-    Граф TODO: дописать в соответствии с определением из курсача
+    Граф - совокупность множества узлов (вершин, nodes), связанных между собой.
+    Отражает ход работы над исследованием.
     """
 
     graph_id = models.AutoField(verbose_name="graph_id", primary_key=True)
@@ -33,12 +35,12 @@ class Graph(models.Model):
     rsrch_id.short_description = u'researchers'
     data.short_description = u'DOT-data'
 
-    def get_user_ids(self) -> tuple:
+    def get_user_ids(self) -> Tuple[int]:
         """
          Возвращает список, в котором перечислены id "владельцев".
          Этот метод необходим для определения прав доступа пользователя к объекту.
         """
-        return tuple([user for user in self.rsrch_id.get_user_ids()])
+        return tuple([int(user) for user in self.rsrch_id.get_user_ids()])
 
     # ПЕРЕОПРЕДЕЛЕННЫЕ МЕТОДЫ
 
@@ -95,9 +97,12 @@ class Graph(models.Model):
         self._data_to_dot()
         return self._dot
 
+    def _get_node_metadata(self, node_id: str) -> Dict[str, any]:
+        return self._get_nodes_dict()[node_id][0]['attributes']
+
     # МЕТОДЫ СВЯЗЕЙ
 
-    def _get_edges_dict(self) -> dict:
+    def _get_edges_dict(self) -> Dict[str, List[pydot.Edge]]:
         """
         Возвращает связи в графе в формате словаря,
         где ключ - айди узла, из которого идет грань
@@ -114,20 +119,22 @@ class Graph(models.Model):
 
     # МЕТОДЫ УЗЛОВ
 
-    def _get_nodes_dict(self) -> dict:
+    def _get_nodes_dict(self) -> Dict[str, pydot.Node]:
         """
         Возвращает узлы в графе в формате словаря,
-        где ключ - айди узла
+        где ключ - айди узла.
+
+        Не предназначен для мутации!
         """
-        nodes = self._get_dot().get_nodes()
-        node_dict = {n.get_name(): n for n in nodes}
 
-        return node_dict
+        return self._get_dot().obj_dict['nodes']
 
-    def _get_parents(self) -> dict:
+    def _get_parents(self) -> Dict[str, Set[pydot.Node]]:
         """
         Возвращает словарь, в котором для каждого индекса вершины графа указаны
-        индексы родительских узлов
+        индексы родительских узлов.
+
+        Не предназначен для мутации!
         """
         prev = dict()
 
@@ -142,10 +149,12 @@ class Graph(models.Model):
 
         return prev
 
-    def _get_children(self) -> dict:
+    def _get_children(self) -> Dict[str, Set[pydot.Node]]:
         """
         Возвращает словарь, в котором для каждого индекса вершины графа указаны
-        индексы дочерних узлов
+        индексы дочерних узлов.
+
+        Не предназначен для мутации!
         """
         next = dict()
         for e in self._get_dot().get_edges():
@@ -158,57 +167,23 @@ class Graph(models.Model):
 
         return next
 
-    def _delete_node_from_dot(self, node_id: str):
+    def rewrite_graph_schema(self, levels: Dict[int, Dict[str, List[str]]]):
         """
-        Удаляет узел с переданным айди из графа и переподвязывает связанные с ним вершины
+        Переписывает схему графа в соответствии с новым переданным levels.
+
+        Не вызывает метод save!
         """
-        self._data_to_dot()
-        dot = self._dot
-
-        if node_id in ('A', 'B'):
-            raise BadRequest()
-
-        parents_dict = self._get_parents()
-        parents_ids = list()
-        if node_id in parents_dict:
-            parents_ids = parents_dict[node_id]
-        else:
-            raise BadRequest()  # значит в графе нет узла с таким id
-
-        children_dict = self._get_children()
-        children_ids = list()
-        if node_id in children_dict:
-            children_ids = children_dict[node_id]
-
-        dot.del_node(node_id)
-
-        for i, edge in enumerate(dot.get_edges()):
-            if node_id in edge.obj_dict['points']:
-                dot.del_edge(edge.obj_dict['points'][0], edge.obj_dict['points'][1])
-
-        for p in parents_ids:
-            for ch in children_ids:
-                dot.add_edge(pydot.Edge(src=p, dst=ch))
-
-        self._dot = dot
-        self._dot_to_data()
-
-    def delete_node_from_dot(self, node_id: str):  # TODO: need tests, добавить проверку что нет
-        self._delete_node_from_dot(node_id)
-        self.save()
-
-    def _rewrite_graph_schema(self, levels: dict) -> pydot.Dot:
-        """
-        Удаляет узел с переданным айди из графа
-        """
-
-        new_dot = pydot.graph_from_dot_data('digraph{}')[0]
+        new_dot: pydot.Dot = pydot.graph_from_dot_data('digraph{}')[0]
         node_list = [i.get_name() for i in new_dot.get_nodes()]
+        old_nodes = self._get_nodes_dict()
 
         for _, nodes in levels.items():
             for node_id, prevs in nodes.items():
                 if node_id not in node_list:
-                    new_dot.add_node(pydot.Node(node_id))
+                    old_attrs = dict()
+                    if node_id in old_nodes:
+                        old_attrs = self._get_node_metadata(node_id)
+                    new_dot.add_node(pydot.Node(node_id, **old_attrs))
                     node_list.append(node_id)
                 for prev_node_id in prevs:
                     if prev_node_id not in node_list:
@@ -216,15 +191,11 @@ class Graph(models.Model):
                         node_list.append(prev_node_id)
                     new_dot.add_edge(pydot.Edge(src=prev_node_id, dst=node_id))
 
-        return new_dot
+        self._dot = new_dot
+        self._dot_to_data()
 
-    def rewrite_graph_schema(self, levels: dict):
-        new_dot = self._rewrite_graph_schema(levels)
-        self.data = new_dot.to_string()
-        self._data_to_dot()
-
-    def _rewrite_node_metadata(self, node_id: str, new_matadata: dict) -> dict:
-        old_metadata = self._get_nodes_dict()[node_id].obj_dict['attributes']
+    def _rewrite_node_metadata(self, node_id: str, new_matadata: Dict[str, any]) -> Dict[str, any]:
+        old_metadata = self._get_nodes_dict()[node_id][0]['attributes']
 
         def edit(key: str, new_val: str) -> dict:
             old_metadata[key] = new_val
@@ -257,7 +228,7 @@ class Graph(models.Model):
         else:
             raise BadRequest()
 
-    def rewrite_node_metadata(self, node_id: str, req_matadata: dict):
+    def rewrite_node_metadata(self, node_id: str, req_matadata: Dict[str, any]):
         self._data_to_dot()
         new_matadata = self._rewrite_node_metadata(node_id, req_matadata)
         self._dot.obj_dict['nodes'][node_id][0]['attributes'] = new_matadata
@@ -285,7 +256,7 @@ class Graph(models.Model):
     def get_nodes_metadata_json(self) -> str:
         return json.dumps(self._get_nodes_metadata_dict())
 
-    def _dot_to_dict_levels(self) -> dict:
+    def _dot_to_dict_levels(self) -> Dict[int, Dict[str, List[str]]]:
         """
         Приводит к следующему виду:
         {

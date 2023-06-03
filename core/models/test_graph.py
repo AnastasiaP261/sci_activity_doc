@@ -1,13 +1,16 @@
 import collections
 from unittest import TestCase
+
+from django.test import TestCase
 from django.core.exceptions import ValidationError, BadRequest, ObjectDoesNotExist
+from typing import Dict, Callable, Iterable, List, Mapping, Tuple, Set
 
 import pydot
 
 from .graph import Graph
 
 
-class TestGraph__dot_to_dict_levels(TestCase):
+class TestGraph_dot_to_dict_levels(TestCase):
     def test_default_graph(self):
         graph = Graph(
             data='''
@@ -447,7 +450,7 @@ class TestGraph__get_nodes_metadata(TestCase):
         )
 
 
-class TestGraph__rewrite_graph_schema(TestCase):
+class TestGraph_rewrite_graph_schema(TestCase):
     def test_add_node_between(self):
         graph = Graph(
             data='''
@@ -459,13 +462,14 @@ class TestGraph__rewrite_graph_schema(TestCase):
             ''',
         )
         new_levels = {
-            '0': {"A": []},
-            '1': {"1": ["A"]},
-            '2': {"B": ["1"]},
+            0: {"A": []},
+            1: {"1": ["A"]},
+            2: {"B": ["1"]},
         }
 
+        graph.rewrite_graph_schema(new_levels)
         self.assertEqual(
-            graph._rewrite_graph_schema(new_levels).to_string(),
+            graph._dot.to_string(),
             '''digraph G {\nA;\n1;\nA -> 1;\nB;\n1 -> B;\n}\n''',
             msg='добавление узла между узлами'
         )
@@ -481,19 +485,81 @@ class TestGraph__rewrite_graph_schema(TestCase):
             ''',
         )
         new_levels = {
-            '0': {"A": []},
-            '1': {"1": ["A"]},
-            '2': {"B": ["A"]},
+            0: {"A": []},
+            1: {"1": ["A"]},
+            2: {"B": ["A"]},
         }
 
+        graph.rewrite_graph_schema(new_levels)
         self.assertEqual(
-            graph._rewrite_graph_schema(new_levels).to_string(),
+            graph._dot.to_string(),
             '''digraph G {\nA;\n1;\nA -> 1;\nB;\nA -> B;\n}\n''',
             msg='добавление тупикового узла',
         )
 
+    def test_delete_node_with_few_parents(self):
+        graph = Graph(
+            data='''
+                digraph { 
+                    A; 
+                    B; 
+                    1;
+                    2;
+                    3;
+                    4;
+                    A -> 1; 
+                    A -> 2; 
+                    A -> 3; 
+                    1 -> 4;
+                    2 -> 4;
+                    3 -> 4;
+                    4 -> B;
+                }
+            ''',
+        )
+        new_levels = {
+            0: {"A": []},
+            1: {"1": ["A"], "2": ["A"], "3": ["A"]},
+            2: {"B": ["1", "2", "3"]}
+        }
 
-class TestGraph__rewrite_node_metadata(TestCase):
+        graph.rewrite_graph_schema(new_levels)
+        self.assertEqual(
+            graph._dot.to_string(),
+            '''digraph G {\nA;\n1;\nA -> 1;\n2;\nA -> 2;\n3;\nA -> 3;\nB;\n1 -> B;\n2 -> B;\n3 -> B;\n}\n''',
+            msg='удаление узла с несколькими родителями',
+        )
+
+    def test_edit_graph_with_save_metadata(self):
+        graph = Graph(
+            data='''
+                   digraph { 
+                       A [title="NODE_A"]; 
+                       B; 
+                       1 [subgraph=123];
+                       2;
+                       A -> 1; 
+                       1 -> B; 
+                       A -> 2; 
+                       2 -> B; 
+                   }
+               ''',
+        )
+        new_levels = {
+            0: {"A": []},
+            1: {"1": ["A"]},
+            2: {"B": ["1"]},
+        }
+
+        graph.rewrite_graph_schema(new_levels)
+        self.assertEqual(
+            graph._dot.to_string(),
+            '''digraph G {\nA [title="NODE_A"];\n1 [subgraph=123];\nA -> 1;\nB;\n1 -> B;\n}\n''',
+            msg='добавление изменение структуры с сохранением метаданных',
+        )
+
+
+class TestGraph_rewrite_node_metadata(TestCase):
     def test_edit_subgraph_id(self):
         graph = Graph(
             data='''
@@ -506,9 +572,11 @@ class TestGraph__rewrite_node_metadata(TestCase):
                 }
             ''',
         )
+        node_id = '1'
 
+        graph.rewrite_node_metadata(node_id, {'is_subgraph': True, 'subgraph_graph_id': 345, 'notes_ids': []}),
         self.assertEqual(
-            graph._rewrite_node_metadata('1', {'is_subgraph': True, 'subgraph_graph_id': 345, 'notes_ids': []}),
+            graph._dot.obj_dict['nodes'][node_id][0]['attributes'],
             {'subgraph': 345},
             msg='изменение айди подграфа'
         )
@@ -525,9 +593,11 @@ class TestGraph__rewrite_node_metadata(TestCase):
                 }
             ''',
         )
+        node_id = '1'
 
+        graph.rewrite_node_metadata(node_id, {'is_subgraph': True, 'subgraph_graph_id': 123, 'notes_ids': []}),
         self.assertEqual(
-            graph._rewrite_node_metadata('1', {'is_subgraph': True, 'subgraph_graph_id': 123, 'notes_ids': []}),
+            graph._dot.obj_dict['nodes'][node_id][0]['attributes'],
             {'subgraph': 123},
             msg='успешное изменение типа узла на "подграф"'
         )
@@ -588,36 +658,3 @@ class TestGraph__rewrite_node_metadata(TestCase):
             msg='установка названия узла'
         )
 
-
-class TestGraph__delete_node_from_dot(TestCase):
-    """
-    ↘ → ↗ - связи в графе
-    ◯ - вершина графа
-    ⊗ - удаляемая вершина графа
-    ➤ - результирующий вид графа после удаления
-    """
-
-    def test_ok(self):
-        """
-        → ◯ → ⊗ → ◯    ➤   → ◯ → ◯
-        """
-
-        graph = Graph(
-            data='''
-                digraph { 
-                    A; 
-                    1;
-                    B; 
-                    A -> 1; 
-                    1 -> B; 
-                }
-            ''',
-        )
-
-        graph._delete_node_from_dot("1")
-
-        self.assertEqual(
-            graph.data,
-            'digraph G {\nA;\nB;\nA -> B;\n}\n',
-            msg="удаление узла с одним ребенком и одним родителем"
-        )
