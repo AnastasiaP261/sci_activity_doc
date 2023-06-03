@@ -7,9 +7,6 @@ from django.utils.translation import gettext  # обеспечивает лок�
 from django.utils.translation import gettext_lazy as _  # обеспечивает локализацию
 
 
-# TODO: добавить множественные числа для админки
-
-
 @admin.register(User)
 class UserAdmin(UserAdmin):
     list_display = ['id', 'last_name', 'first_name', 'surname', 'study_group', 'username', 'email', 'is_staff',

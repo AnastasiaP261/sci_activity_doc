@@ -7,7 +7,7 @@ from sci_activity_doc.settings import AUTH_USER_MODEL as user_model
 
 class Note(models.Model):
     """
-    Заметка TODO: дописать в соответствии с определением из курсача
+    Заметка - краткая запись о чем-либо проделанном/изученном в рамках конкретного исследования.
     """
 
     note_id = models.AutoField(verbose_name="note_id", primary_key=True)
@@ -25,8 +25,9 @@ class Note(models.Model):
          Этот метод необходим для определения прав доступа пользователя к объекту.
         """
         return tuple([user for user in [*self.rsrch_id.get_user_ids(), self.user_id_id]])
-    rsrch_id.short_description=u'research'
-    user_id.short_description=u'user'
+
+    rsrch_id.short_description = u'research'
+    user_id.short_description = u'user'
 
     def __str__(self) -> str:
         return f"{self.note_id} {self.note_type}"

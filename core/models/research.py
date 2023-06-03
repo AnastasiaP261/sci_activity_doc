@@ -39,7 +39,6 @@ class Research(models.Model):
         """
         return tuple([user.id for user in self.researchers.all()])
 
-
     def get_researchers_names(self) -> str:
         """
         Возвращает строку, в которой перечислены Фамилия И.О. связанных исследователей

@@ -234,7 +234,7 @@ class Graph(models.Model):
         self._dot.obj_dict['nodes'][node_id][0]['attributes'] = new_matadata
         self._dot_to_data()
 
-    def node_with_node_id_exists(self, node_id: str) -> bool:  # TODO: need tests
+    def node_with_node_id_exists(self, node_id: str) -> bool:
         """
         Проверяет, что в графе существует узел с переданным айди
         """

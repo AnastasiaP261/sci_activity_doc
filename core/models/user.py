@@ -1,6 +1,6 @@
+import computed_property
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-import computed_property
 
 
 class User(AbstractUser):

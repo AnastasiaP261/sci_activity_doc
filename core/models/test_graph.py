@@ -1,11 +1,7 @@
-import collections
 from unittest import TestCase
 
+from django.core.exceptions import BadRequest
 from django.test import TestCase
-from django.core.exceptions import ValidationError, BadRequest, ObjectDoesNotExist
-from typing import Dict, Callable, Iterable, List, Mapping, Tuple, Set
-
-import pydot
 
 from .graph import Graph
 
@@ -658,3 +654,32 @@ class TestGraph_rewrite_node_metadata(TestCase):
             msg='установка названия узла'
         )
 
+
+class TestGraph_node_with_node_id_exists(TestCase):
+    def test_exists(self):
+        graph = Graph(
+            data='''
+                digraph { 
+                    A; 
+                    B; 
+                    1;
+                    A -> B; 
+                    A -> 1; 
+                }
+            ''',
+        )
+        self.assertTrue(graph.node_with_node_id_exists('A'))
+        self.assertTrue(graph.node_with_node_id_exists('1'))
+        self.assertTrue(graph.node_with_node_id_exists('B'))
+
+    def test_not_exists(self):
+        graph = Graph(
+            data='''
+                        digraph { 
+                            A; 
+                            B; 
+                            A -> B; 
+                        }
+                    ''',
+        )
+        self.assertFalse(graph.node_with_node_id_exists('1'))
