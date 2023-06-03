@@ -3,7 +3,6 @@ from django.http import Http404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, permissions, viewsets, filters
 
-import api.serializers.user
 from api import serializers
 from api.pagination import StandardResultsSetPagination
 from core.models import User
@@ -14,7 +13,7 @@ class ResearcherList(generics.ListAPIView):
     Список исследователей, отсортированных по ФИО.
     В конце списка будут присутствовать "архивные" пользователи.
     """
-    serializer_class = api.serializers.user.UserSerializer
+    serializer_class = serializers.user.UserSerializer
     pagination_class = StandardResultsSetPagination
     permission_classes = [permissions.IsAuthenticated, ]
     filter_backends = [DjangoFilterBackend, ]
@@ -45,7 +44,7 @@ class UserDetail(generics.RetrieveAPIView):
     """
     Текущий пользователь
     """
-    serializer_class = api.serializers.user.UserSerializer
+    serializer_class = serializers.user.UserSerializer
     permission_classes = [permissions.IsAuthenticated, ]
     lookup_field = 'username'
 

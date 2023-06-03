@@ -7,8 +7,6 @@ from django.http import Http404
 from rest_framework import generics, permissions
 from rest_framework.response import Response
 
-import api.serializers.graph
-import api.serializers.note_and_node
 from api import serializers
 from api.views.consts import GET_METHOD, DELETE_METHOD, PATCH_METHOD
 from auth_wrapper.license import IsOwnerObjectOrIsProfessorOrReadOnly
@@ -48,15 +46,15 @@ class GraphDetail(generics.RetrieveAPIView,
         kwargs.setdefault('context', self.get_serializer_context())
 
         if self.request.method == GET_METHOD:
-            graph_serializer = api.serializers.graph.GraphSerializer
-            nodes_notes_rel_serializer = api.serializers.note_and_node.NodesNotesRelationSerializer
+            graph_serializer = serializers.graph.GraphSerializer
+            nodes_notes_rel_serializer = serializers.note_and_node.NodesNotesRelationSerializer
 
             return graph_serializer(*args, **kwargs), nodes_notes_rel_serializer(*args, **kwargs)
 
         elif self.request.method == PATCH_METHOD:
-            title_serializer = api.serializers.graph.GraphTitleUpdateSerializer
-            metadata_serializer = api.serializers.graph.GraphMetadataUpdateSerializer
-            levels_serializer = api.serializers.graph.GraphLevelsUpdateSerializer
+            title_serializer = serializers.graph.GraphTitleUpdateSerializer
+            metadata_serializer = serializers.graph.GraphMetadataUpdateSerializer
+            levels_serializer = serializers.graph.GraphLevelsUpdateSerializer
 
             return title_serializer(*args, **kwargs), \
                 metadata_serializer(*args, **kwargs), \
@@ -126,5 +124,5 @@ class GraphDetail(generics.RetrieveAPIView,
 
 
 class CreateGraph(generics.CreateAPIView):
-    serializer_class = api.serializers.graph.GraphSerializer
+    serializer_class = serializers.graph.GraphSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerObjectOrIsProfessorOrReadOnly]

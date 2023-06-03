@@ -1,18 +1,14 @@
 from django.core.exceptions import BadRequest
-
-import api.serializers.graph
-import api.serializers.note_and_node
-from api.views.consts import GET_METHOD, POST_METHOD, PATCH_METHOD, DELETE_METHOD
-from auth_wrapper.license import IsOwnerObjectOrIsProfessorOrReadOnly, IsProfessorOrReadOnly
-
 from django.db import transaction
 from django.http import Http404
-from rest_framework import permissions, generics
+from rest_framework import permissions, generics, filters
 from rest_framework.response import Response
 
-from core.models import Note, Graph, Research
 from api import serializers
 from api.pagination import StandardResultsSetPagination
+from api.views.consts import GET_METHOD, POST_METHOD, PATCH_METHOD, DELETE_METHOD
+from auth_wrapper.license import IsOwnerObjectOrIsProfessorOrReadOnly, IsProfessorOrReadOnly
+from core.models import Note, Graph, Research
 
 
 class ResearchDetail(generics.RetrieveAPIView,
@@ -81,10 +77,10 @@ class ResearchDetail(generics.RetrieveAPIView,
         r_serialize = serializers.ResearchSerializer(research)
         research = r_serialize.data
 
-        g_serializer = api.serializers.graph.GraphTitleUpdateSerializer(graphs, many=True)
+        g_serializer = serializers.graph.GraphTitleUpdateSerializer(graphs, many=True)
         graphs = g_serializer.data
 
-        n_serializer = api.serializers.note_and_node.NoteWithoutGraphInfoSerializer(notes_without_graph, many=True, required=False)
+        n_serializer = serializers.note_and_node.NoteWithoutGraphInfoSerializer(notes_without_graph, many=True, required=False)
         notes_without_graph = n_serializer.data
 
         kwargs.setdefault('context', self.get_serializer_context())
@@ -107,7 +103,7 @@ class ResearchDetail(generics.RetrieveAPIView,
 class ResearchList(generics.CreateAPIView,
                    generics.ListAPIView):
     pagination_class = StandardResultsSetPagination
-    permission_classes = [permissions.IsAuthenticated, IsProfessorOrReadOnly]\
+    permission_classes = [permissions.IsAuthenticated, IsProfessorOrReadOnly]
     filter_backends = [filters.SearchFilter, ]
 
 

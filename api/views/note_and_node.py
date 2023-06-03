@@ -5,7 +5,6 @@ from rest_framework import generics, permissions, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
-import api.serializers.note_and_node
 from api import serializers
 from api.pagination import StandardResultsSetPagination
 from api.views.consts import GET_METHOD, DELETE_METHOD
@@ -17,7 +16,7 @@ class NoteDetail(generics.RetrieveAPIView,
                  generics.DestroyAPIView):
     lookup_url_kwarg = 'note_id'
     lookup_field = 'note_id'
-    serializer_class = api.serializers.note_and_node.NoteWithAuthorInfoSerializer
+    serializer_class = serializers.NoteWithAuthorInfoSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerObjectOrIsProfessorOrReadOnly]
 
     def get_object(self):
@@ -72,8 +71,8 @@ class NoteCreate(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated, IsOwnerObjectOrIsProfessorOrReadOnly]
 
     def get_serializer(self, *args, **kwargs):
-        note_serializer = api.serializers.note_and_node.NoteSerializer
-        nodes_notes_rel_serializer = api.serializers.note_and_node.NodesNotesRelationSerializer
+        note_serializer = serializers.NoteSerializer
+        nodes_notes_rel_serializer = serializers.NodesNotesRelationSerializer
 
         kwargs.setdefault('context', self.get_serializer_context())
         return note_serializer(*args, **kwargs), nodes_notes_rel_serializer(*args, **kwargs)
@@ -121,7 +120,7 @@ class NoteCreate(generics.CreateAPIView):
 
 class NodeDetail(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated, IsOwnerObjectOrIsProfessorOrReadOnly]
-    serializer_class = api.serializers.note_and_node.NoteWithoutGraphInfoSerializer
+    serializer_class = serializers.NoteWithoutGraphInfoSerializer
 
     def get_queryset(self):
         try:
