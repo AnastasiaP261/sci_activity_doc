@@ -529,17 +529,17 @@ class TestGraph_rewrite_graph_schema(TestCase):
     def test_edit_graph_with_save_metadata(self):
         graph = Graph(
             data='''
-                   digraph { 
-                       A [title="NODE_A"]; 
-                       B; 
-                       1 [subgraph=123];
-                       2;
-                       A -> 1; 
-                       1 -> B; 
-                       A -> 2; 
-                       2 -> B; 
-                   }
-               ''',
+                digraph { 
+                    A [title="NODE_A"]; 
+                    B; 
+                    1 [subgraph=123];
+                    2;
+                    A -> 1; 
+                    1 -> B; 
+                    A -> 2; 
+                    2 -> B; 
+                }
+           ''',
         )
         new_levels = {
             0: {"A": []},
@@ -635,7 +635,7 @@ class TestGraph_rewrite_node_metadata(TestCase):
             msg='изменение название узла'
         )
 
-    def test_edit_node_title(self):
+    def test_set_node_title(self):
         graph = Graph(
             data='''
                 digraph { 
@@ -675,11 +675,11 @@ class TestGraph_node_with_node_id_exists(TestCase):
     def test_not_exists(self):
         graph = Graph(
             data='''
-                        digraph { 
-                            A; 
-                            B; 
-                            A -> B; 
-                        }
-                    ''',
+                digraph { 
+                    A; 
+                    B; 
+                    A -> B; 
+                }
+            ''',
         )
         self.assertFalse(graph.node_with_node_id_exists('1'))
