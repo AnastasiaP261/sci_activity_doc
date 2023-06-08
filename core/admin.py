@@ -1,10 +1,8 @@
 from django.contrib import admin
-from core.models import NodesNotesRelation, Note, Graph, Research, User
 from django.contrib.auth.admin import UserAdmin
-import gettext
-
-from django.utils.translation import gettext  # обеспечивает локализацию
 from django.utils.translation import gettext_lazy as _  # обеспечивает локализацию
+
+from core.models import NodesNotesRelation, Note, Graph, Research, User
 
 
 @admin.register(User)

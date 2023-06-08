@@ -1,5 +1,3 @@
-from unittest import TestCase
-
 from django.core.exceptions import BadRequest
 from django.test import TestCase
 
