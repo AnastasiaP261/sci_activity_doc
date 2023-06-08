@@ -8,7 +8,7 @@ from rest_framework import generics, permissions
 from rest_framework.response import Response
 
 from api import serializers
-from api.views.consts import GET_METHOD, DELETE_METHOD, PATCH_METHOD
+from sci_activity_doc.consts import GET_METHOD, DELETE_METHOD, PATCH_METHOD
 from auth_wrapper.license import IsOwnerObjectOrIsProfessorOrReadOnly
 from core.models import Graph, NodesNotesRelation, Note
 

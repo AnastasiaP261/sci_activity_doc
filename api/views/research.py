@@ -6,7 +6,7 @@ from rest_framework.response import Response
 
 from api import serializers
 from api.pagination import StandardResultsSetPagination
-from api.views.consts import GET_METHOD, POST_METHOD, PATCH_METHOD, DELETE_METHOD
+from sci_activity_doc.consts import GET_METHOD, POST_METHOD, PATCH_METHOD, DELETE_METHOD
 from auth_wrapper.license import IsOwnerObjectOrIsProfessorOrReadOnly, IsProfessorOrReadOnly
 from core.models import Note, Graph, Research
 
