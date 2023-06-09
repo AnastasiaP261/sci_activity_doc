@@ -1,28 +1,20 @@
 from django.db import models
 from re import search, findall, DOTALL, sub
+from bs4 import BeautifulSoup as bs
 
 
 class RemakeItemManager(models.Manager):
 
-    def _clean_text(self, text: str) -> str:
-        lines = text.split('\n')
-        dry_lines = list()
-        for i, line in enumerate(lines):
-            l = line.strip()
-            if l == '':
-                continue
-            else:
-                dry_lines.append(l)
-        return '\n'.join(dry_lines)
-
     def remake_latex_text(self, text: str) -> str:
         items = self.filter(is_head=True)
-        text = self._clean_text(text)
 
         for item in items:
             text = item.remake_latex_text(text)
 
-        return text
+        soup = bs(text)
+        pretty_html = soup.prettify()
+
+        return pretty_html
 
 
 class RemakeItem(models.Model):
