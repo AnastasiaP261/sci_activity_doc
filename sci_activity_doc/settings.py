@@ -195,7 +195,7 @@ if os.environ.get("ENVIRONMENT", default=PROD_ENV) in (LOCAL_ENV, DEV_ENV):
 else:
     REST_KNOX = {
         'SECURE_HASH_ALGORITHM': 'cryptography.hazmat.primitives.hashes.SHA512',  # в курсаче укажи что тут SHA512
-        'USER_SERIALIZER': 'api.serializers.CustomUserSerializer',
+        'USER_SERIALIZER': 'api.serializers.UserSerializer',
         'TOKEN_LIMIT_PER_USER': 3,  # лимит токенов для каждого пользователя
         'EXPIRY_DATETIME_FORMAT': api_settings.DATETIME_FORMAT,
     }

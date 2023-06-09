@@ -11,7 +11,7 @@ from api import serializers
 from api.pagination import StandardResultsSetPagination
 from auth_wrapper.license import IsOwnerObjectOrIsProfessorOrReadOnly
 from core.models import Note, Graph, NodesNotesRelation
-from gitlab_client.client import GLClient
+from gitlab_client.client import GLClient, GitlabError
 from gitlab_client.parse_url import parse_note_type_from_url
 from latex2html.models import RemakeItem
 from sci_activity_doc.consts import GET_METHOD, DELETE_METHOD
@@ -67,8 +67,8 @@ class NoteDetail(generics.RetrieveAPIView,
 
         try:
             note_raw_text = self.get_note_raw_text_by_url(data['url'])
-        except Exception as e:
-            data['text'] = f'Не удалось получить текст заметки :(\nПроблемы с Gitlab: {e}'
+        except GitlabError as e:
+            data['text'] = f'Не удалось получить текст заметки :(<br/>Проблемы с Gitlab: {e}'
         else:
             if REMAKE_LATEX2HTML_ENABLE:
                 html_text = RemakeItem.objects.remake_latex_text(note_raw_text)

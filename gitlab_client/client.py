@@ -1,31 +1,27 @@
 import requests
 from requests import Response
-from rest_framework.exceptions import AuthenticationFailed, NotFound
+from rest_framework.exceptions import AuthenticationFailed
 
 from gitlab_client.consts import NOTE_ATTR_REPO_ID, NOTE_ATTR_BRANCH_NAME, NOTE_ATTR_FILE_PATH, NOTE_ATTR_FILE_FORMAT
 from gitlab_client.parse_url import _get_note_attributes
-from sci_activity_doc.consts import GET_METHOD
-from sci_activity_doc.settings import GITLAB_API_ADDRESS, GITLAB_ACCESS_TOKEN, GITLAB_ACCESS_TOKEN_HEADER_KEY, GITLAB_TIMEOUT
+from sci_activity_doc.settings import GITLAB_API_ADDRESS, GITLAB_ACCESS_TOKEN, GITLAB_ACCESS_TOKEN_HEADER_KEY, \
+    GITLAB_TIMEOUT
+
+
+class GitlabError(Exception):
+    """
+    Гитлаб вернул ошибку
+    """
+
+    def __init__(self, content: str, code: int):
+        self.content = content
+        self.code = code
+        self.message = f"Response content: {self.content} with code: {self.code}"
+        super().__init__(self.message)
 
 
 class GLClient:
-    token_header_key: str
-    token_val: str
-    address: str
-    gitlab_timeout: float  # в секундах
-
-    def __init__(
-            self,
-            address: str = GITLAB_API_ADDRESS,
-            token_header_key: str = GITLAB_ACCESS_TOKEN_HEADER_KEY,
-            token_val: str = GITLAB_ACCESS_TOKEN,
-            timeout: float = GITLAB_TIMEOUT,
-    ):
-        self.address = address
-        self.token_val = token_val
-        self.token_header_key = token_header_key
-        self.gitlab_timeout = timeout
-
+    def __init__(self, ):
         self._auth()
 
     def _auth(self):
@@ -34,29 +30,28 @@ class GLClient:
             raise AuthenticationFailed
 
     def _get(self, url: str, params: dict = None, headers: dict = None) -> Response:
-        resp = requests.request(
-            method=GET_METHOD,
+        resp = requests.get(
             url=url,
             params=params,
             headers=headers,
-            timeout=self.gitlab_timeout,
+            timeout=GITLAB_TIMEOUT,
         )
 
         return resp
 
     def _get_projects(self):
         return self._get(
-            url=f'{self.address}/projects/',
+            url=f'{GITLAB_API_ADDRESS}/projects/',
             headers={
-                self.token_header_key: self.token_val,
+                GITLAB_ACCESS_TOKEN_HEADER_KEY: GITLAB_ACCESS_TOKEN,
             },
         )
 
     def _get_note_by_url(self, note_attrs: dict):
         resp = self._get(
-            url=f'{self.address}/projects/{note_attrs[NOTE_ATTR_REPO_ID]}/repository/files/{note_attrs[NOTE_ATTR_FILE_PATH]}/raw',
+            url=f'{GITLAB_API_ADDRESS}/projects/{note_attrs[NOTE_ATTR_REPO_ID]}/repository/files/{note_attrs[NOTE_ATTR_FILE_PATH]}/raw',
             headers={
-                self.token_header_key: self.token_val,
+                GITLAB_ACCESS_TOKEN_HEADER_KEY: GITLAB_ACCESS_TOKEN,
             },
             params={
                 'ref': note_attrs[NOTE_ATTR_BRANCH_NAME],
@@ -77,5 +72,5 @@ class GLClient:
             text = resp.text
             return text, note_attrs[NOTE_ATTR_FILE_FORMAT]
 
-        elif resp.status_code == 404:
-            raise NotFound()
+        else:
+            raise GitlabError(str(resp.content), resp.status_code)
