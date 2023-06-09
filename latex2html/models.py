@@ -38,7 +38,8 @@ class RemakeItem(models.Model):
 
     is_head = models.BooleanField(null=False, blank=False,
                                   help_text='Это значение равно True только у самостоятельных тегов, ' \
-                                            'например, у тега itemize, но не у тега item')
+                                            'например, у тега itemize, но не у тега item. Также, с помощью этого ' \
+                                            'значения можно выставить порядок выполнения преобразований.')
 
     objects = RemakeItemManager()
 
