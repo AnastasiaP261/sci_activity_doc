@@ -93,7 +93,7 @@ NOTE_DETAIL_GET_CACHE_TIME = os.environ.get("NOTE_DETAIL_GET_CACHE_TIME", 60 * 2
 # если включено, то текст заметок будет преобразовываться в html
 REMAKE_LATEX2HTML_ENABLE = os.environ.get("REMAKE_LATEX2HTML_ENABLE", True)
 
-GITLAB_HOST = os.environ.get("GITLAB_HOST")
+GITLAB_API_ADDRESS = os.environ.get("GITLAB_API_ADDRESS")
 GITLAB_ACCESS_TOKEN = os.environ.get("GITLAB_ACCESS_TOKEN")
 GITLAB_ACCESS_TOKEN_HEADER_KEY = os.environ.get("GITLAB_ACCESS_TOKEN_HEADER_KEY", 'PRIVATE-TOKEN')
 GITLAB_TIMEOUT = os.environ.get("GITLAB_TIMEOUT", default=2.)

@@ -5,7 +5,7 @@ from rest_framework.exceptions import AuthenticationFailed, NotFound
 from gitlab_client.consts import NOTE_ATTR_REPO_ID, NOTE_ATTR_BRANCH_NAME, NOTE_ATTR_FILE_PATH, NOTE_ATTR_FILE_FORMAT
 from gitlab_client.parse_url import _get_note_attributes
 from sci_activity_doc.consts import GET_METHOD
-from sci_activity_doc.settings import GITLAB_HOST, GITLAB_ACCESS_TOKEN, GITLAB_ACCESS_TOKEN_HEADER_KEY, GITLAB_TIMEOUT
+from sci_activity_doc.settings import GITLAB_API_ADDRESS, GITLAB_ACCESS_TOKEN, GITLAB_ACCESS_TOKEN_HEADER_KEY, GITLAB_TIMEOUT
 
 
 class GLClient:
@@ -16,12 +16,12 @@ class GLClient:
 
     def __init__(
             self,
-            host: str = GITLAB_HOST,
+            address: str = GITLAB_API_ADDRESS,
             token_header_key: str = GITLAB_ACCESS_TOKEN_HEADER_KEY,
             token_val: str = GITLAB_ACCESS_TOKEN,
             timeout: float = GITLAB_TIMEOUT,
     ):
-        self.address = host
+        self.address = address
         self.token_val = token_val
         self.token_header_key = token_header_key
         self.gitlab_timeout = timeout

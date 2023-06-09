@@ -65,15 +65,18 @@ class NoteDetail(generics.RetrieveAPIView,
         data['author'].pop('first_name', '')
         data['author'].pop('last_name', '')
 
-        note_raw_text = self.get_note_raw_text_by_url(data['url'])
-
-        if REMAKE_LATEX2HTML_ENABLE:
-            html_text = RemakeItem.objects.remake_latex_text(note_raw_text)
-            data['text'] = html_text
+        try:
+            note_raw_text = self.get_note_raw_text_by_url(data['url'])
+        except Exception as e:
+            data['text'] = f'Не удалось получить текст заметки :(\nПроблемы с Gitlab: {e}'
         else:
-            data['text'] = note_raw_text
+            if REMAKE_LATEX2HTML_ENABLE:
+                html_text = RemakeItem.objects.remake_latex_text(note_raw_text)
+                data['text'] = html_text
+            else:
+                data['text'] = note_raw_text
 
-        return Response(serializer.data)
+        return Response(data)
 
     @transaction.atomic
     def destroy(self, request, *args, **kwargs):
@@ -81,8 +84,7 @@ class NoteDetail(generics.RetrieveAPIView,
         return super().destroy(request, *args, **kwargs)
 
 
-class NoteCreate(generics.CreateAPIView,
-                 GLClient):
+class NoteCreate(generics.CreateAPIView):
     pagination_class = StandardResultsSetPagination
     permission_classes = [permissions.IsAuthenticated, IsOwnerObjectOrIsProfessorOrReadOnly]
 
