@@ -43,6 +43,9 @@ class RemakeItem(models.Model):
 
     objects = RemakeItemManager()
 
+    def __str__(self):
+        return f'({self.id} {self.title})'
+
     def remake_latex_text(self, text: str) -> str:
         while True:
             match = search(self.latex_reqex, text)
