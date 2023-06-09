@@ -1,6 +1,3 @@
-from .research import ResearchSerializer, \
-    ResearchUpdateSerializer, \
-    ResearchCreateSerializer
 from .graph import GraphSerializer, \
     GraphLevelsUpdateSerializer, \
     GraphMetadataUpdateSerializer, \
@@ -10,5 +7,9 @@ from .note_and_node import NoteWithoutGraphInfoSerializer, \
     NodesNotesRelationSerializer, \
     NoteWithAuthorInfoSerializer, \
     NodeMetadataUpdateSerializer
+from .remake_item import RemakeItemSerializer
+from .research import ResearchSerializer, \
+    ResearchUpdateSerializer, \
+    ResearchCreateSerializer
 from .user import UserSerializer, \
     UserSuggestSerializer

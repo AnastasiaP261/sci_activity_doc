@@ -31,7 +31,7 @@ urlpatterns = [
     path(r'note/<int:note_id>/', views.NoteDetail.as_view(),
          name='GET - показ информации о заметке по ее айди, DELETE - удаление заметки'),
     path(r'note/', views.NoteCreate.as_view(),
-         name='GET - список последних заметок, POST - создание заметки'),
+         name='GET - список последних заметок постранично, POST - создание заметки'),
 
     path('graph/<int:graph_id>/node/<int:node_id>/', views.NodeDetail.as_view(),
          name='GET - просмотр информации об узле графа'),
@@ -46,4 +46,9 @@ urlpatterns = [
          name='GET - показ информации об исследовании, DELETE - удаление исследования, PATCH - обновление информации в исследовании'),
     path('research/', views.ResearchList.as_view(),
          name='GET - запрос всех исследований или исследований пользователя, POST - создание графа'),
+
+    path('remake_item/<int:id>/', views.RemakeItemDetail.as_view(),
+         name='DELETE - удаление преобразователя, PATCH - обновление полей преобразователя'),
+    path('remake_item/', views.RemakeItemList.as_view(),
+         name='GET - запрос списка всех преобразователей постранично, POST - создание нового преобразователя'),
 ]

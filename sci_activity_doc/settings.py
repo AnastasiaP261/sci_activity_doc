@@ -87,6 +87,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'sci_activity_doc.wsgi.application'
 
+# время в секундах, на которое будет закеширован запрос списка преобразователей
+REMAKE_ITEMS_LISTS_CACHE_TIME = os.environ.get("REMAKE_ITEMS_LISTS_CACHE_TIME", 60 * 20)
+
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 DATABASES = {

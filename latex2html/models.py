@@ -33,7 +33,7 @@ class RemakeItem(models.Model):
                                        help_text='Текст, содержащий шаблоны и операторы форматирорования строк ' \
                                                  '(в них вставится текст, вытащенный из latex_reqex)')
 
-    child_item = models.ForeignKey('self', on_delete=models.CASCADE, null=True,
+    child_item = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True,
                                    help_text='Заполняется, если тег имеет подтеги')
 
     is_head = models.BooleanField(null=False, blank=False,
