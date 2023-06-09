@@ -1,6 +1,8 @@
 # pull official base image
 FROM python:3.9.6-alpine
 
+RUN apk update && apk add gcc libc-dev make git libffi-dev openssl-dev python3-dev libxml2-dev libxslt-dev
+
 # set work directory
 WORKDIR /usr/src/app
 
@@ -15,7 +17,7 @@ RUN apk update \
 # install dependencies
 RUN pip install --upgrade pip
 COPY ./requirements.txt .
-RUN pip install -r requirements.txt
+RUN pip --no-cache-dir install -r requirements.txt
 
 # copy entrypoint.sh
 COPY ./entrypoint.sh .
