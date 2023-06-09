@@ -1,0 +1,242 @@
+[
+  {
+    "model": "latex2html.remakeitem",
+    "pk": 1,
+    "fields": {
+      "title": "Обычный комментарий",
+      "description": "Как работает: ищет строки, в начале которых стоит % и НЕ -. После могут идти любые символы. В итоговом тексте будет заменено на пустую строку (здесь первая группа это пустые скобки, именно содержимое этих скобок запишется в html_format_str)",
+      "latex_reqex": "^%[^-]()(.+)",
+      "html_format_str": "%s",
+      "child_item": null,
+      "is_head": true
+    }
+  },
+  {
+    "model": "latex2html.remakeitem",
+    "pk": 2,
+    "fields": {
+      "title": "Горизонтальная черта",
+      "description": "Ищет строку, которая начинается на % и состоит как минимум из трех дефисов.",
+      "latex_reqex": "^%()-{3,}",
+      "html_format_str": "<hr>%s",
+      "child_item": null,
+      "is_head": true
+    }
+  },
+  {
+    "model": "latex2html.remakeitem",
+    "pk": 3,
+    "fields": {
+      "title": "Перенос строки newline",
+      "description": "Заменяет newline на тег <br>. В группу запишется пустая строка",
+      "latex_reqex": "\\\\newline()",
+      "html_format_str": "<br>%s",
+      "child_item": null,
+      "is_head": true
+    }
+  },
+  {
+    "model": "latex2html.remakeitem",
+    "pk": 4,
+    "fields": {
+      "title": "Перенос строки hfill и break",
+      "description": "Заменяет два латех тега на тег <br>. В группу запишется пустая строка",
+      "latex_reqex": "\\\\hfill \\\\break()",
+      "html_format_str": "<br>%s",
+      "child_item": null,
+      "is_head": true
+    }
+  },
+  {
+    "model": "latex2html.remakeitem",
+    "pk": 5,
+    "fields": {
+      "title": "Перенос строки два слеша",
+      "description": "Заменяет два слеша на тег <br>. В группу запишется пустая строка",
+      "latex_reqex": "\\\\\\\\()",
+      "html_format_str": "<br>%s",
+      "child_item": null,
+      "is_head": true
+    }
+  },
+  {
+    "model": "latex2html.remakeitem",
+    "pk": 6,
+    "fields": {
+      "title": "Сокращение для API",
+      "description": "В группу запишется строка API, которая потом будет вставлена в форматированную строку",
+      "latex_reqex": "\\\\gls{(API)}",
+      "html_format_str": "%s",
+      "child_item": null,
+      "is_head": true
+    }
+  },
+  {
+    "model": "latex2html.remakeitem",
+    "pk": 7,
+    "fields": {
+      "title": "Сокращение для IS",
+      "description": "В группу запишется пустая строка, которая потом вставится в форматированную строку",
+      "latex_reqex": "\\\\gls{IS}()",
+      "html_format_str": "ИС%s",
+      "child_item": null,
+      "is_head": true
+    }
+  },
+  {
+    "model": "latex2html.remakeitem",
+    "pk": 8,
+    "fields": {
+      "title": "Заголовок третьего уровня",
+      "description": "Просто помещает содержимое тега в html тег",
+      "latex_reqex": "\\\\subsubsection{(.*)}",
+      "html_format_str": "<h4>%s</h4>",
+      "child_item": null,
+      "is_head": true
+    }
+  },
+  {
+    "model": "latex2html.remakeitem",
+    "pk": 9,
+    "fields": {
+      "title": "Заголовок второго уровня",
+      "description": "Просто помещает содержимое тега в html тег",
+      "latex_reqex": "\\\\subsection{(.*)}",
+      "html_format_str": "<h3>%s</h3>",
+      "child_item": null,
+      "is_head": true
+    }
+  },
+  {
+    "model": "latex2html.remakeitem",
+    "pk": 10,
+    "fields": {
+      "title": "Заголовок первого уровня",
+      "description": "Просто помещает содержимое тега в html тег",
+      "latex_reqex": "\\\\section{(.*)}",
+      "html_format_str": "<h2>%s</h2>",
+      "child_item": null,
+      "is_head": true
+    }
+  },
+  {
+    "model": "latex2html.remakeitem",
+    "pk": 11,
+    "fields": {
+      "title": "Название заметки",
+      "description": "Помещает текст тега латеха в html тег",
+      "latex_reqex": "\\\\notestatement{.*}{(.*)}",
+      "html_format_str": "<h1>%s</h1>",
+      "child_item": null,
+      "is_head": true
+    }
+  },
+  {
+    "model": "latex2html.remakeitem",
+    "pk": 12,
+    "fields": {
+      "title": "Подчеркивание",
+      "description": "Оборачивает содержимое латех тега в html тег",
+      "latex_reqex": "\\\\underline{(.*)}",
+      "html_format_str": "<u>%s</u>",
+      "child_item": null,
+      "is_head": true
+    }
+  },
+  {
+    "model": "latex2html.remakeitem",
+    "pk": 13,
+    "fields": {
+      "title": "Жирный шрифт",
+      "description": "Оборачивает содержимое латех тега в html тег",
+      "latex_reqex": "\\\\textbf{(.*)}",
+      "html_format_str": "<b>%s</b>",
+      "child_item": null,
+      "is_head": true
+    }
+  },
+  {
+    "model": "latex2html.remakeitem",
+    "pk": 14,
+    "fields": {
+      "title": "Курсив emph",
+      "description": "Оборачивает содержимое латех тега в html тег",
+      "latex_reqex": "\\\\emph{(.*)}",
+      "html_format_str": "<i>%s</i>",
+      "child_item": null,
+      "is_head": true
+    }
+  },
+  {
+    "model": "latex2html.remakeitem",
+    "pk": 15,
+    "fields": {
+      "title": "Курсив textit",
+      "description": "Оборачивает содержимое латех тега в html тег",
+      "latex_reqex": "\\\\textit{(.*)}",
+      "html_format_str": "<i>%s</i>",
+      "child_item": null,
+      "is_head": true
+    }
+  },
+  {
+    "model": "latex2html.remakeitem",
+    "pk": 16,
+    "fields": {
+      "title": "Листинг кода без определенного языка",
+      "description": "Находит листинги, в которых не определен [language=...]. Помещает содержимое в новый тег с применением стиля. ОБРАТИТЬ ВНИМАНИЕ: форматированная строка экранирует знак процента. Обработка происходит только после того, как будет выполнена обработка всех листингов с определенным языком!",
+      "latex_reqex": "\\\\begin{lstlisting}([\\s\\S]*?)\\\\end{lstlisting}",
+      "html_format_str": "<listing style=\"font-family: Consolas,courier new;background-color: #f1f1f1;padding: 2px;font-size: 105%%;\">\\n%s\\n</listing>",
+      "child_item": null,
+      "is_head": false
+    }
+  },
+  {
+    "model": "latex2html.remakeitem",
+    "pk": 17,
+    "fields": {
+      "title": "Листинг кода с определенным языком",
+      "description": "Находит листинги, в которых определен [language=...]. Помещает содержимое в новый тег с применением стиля. ОБРАТИТЬ ВНИМАНИЕ: форматированная строка экранирует знак процента.",
+      "latex_reqex": "\\\\begin{lstlisting}\\\\[.*\\]([\\s\\S]*?)\\\\end{lstlisting}",
+      "html_format_str": "<listing style=\"font-family: Consolas,courier new;background-color: #f1f1f1;padding: 2px;font-size: 105%%;\">\\n%s\\n</listing>",
+      "child_item": 16,
+      "is_head": true
+    }
+  },
+  {
+    "model": "latex2html.remakeitem",
+    "pk": 18,
+    "fields": {
+      "title": "Элемент списка",
+      "description": "Помещает строку (до первого встретившегося переноса строки) в html тег. Буде обработано после того, как обработаются теги списков",
+      "latex_reqex": "\\\\item\\s*(.*)",
+      "html_format_str": "<li>%s</li>",
+      "child_item": null,
+      "is_head": false
+    }
+  },
+  {
+    "model": "latex2html.remakeitem",
+    "pk": 19,
+    "fields": {
+      "title": "Не нумерованный список",
+      "description": "В отличие от точки, набор \\s\\S включает вообще все символы, в т.ч. и перенос строки.",
+      "latex_reqex": "\\\\begin{itemize}([\\s\\S]*?)\\\\end{itemize}",
+      "html_format_str": "<ul>%s</ul>",
+      "child_item": 18,
+      "is_head": true
+    }
+  },
+  {
+    "model": "latex2html.remakeitem",
+    "pk": 3,
+    "fields": {
+      "title": "Нумерованный список",
+      "description": "В отличие от точки, набор \\s\\S включает вообще все символы, в т.ч. и перенос строки.",
+      "latex_reqex": "\\\\begin{enumerate}([\\s\\S]*?)\\\\end{enumerate}",
+      "html_format_str": "<ol>%s</ol>",
+      "child_item": 18,
+      "is_head": true
+    }
+  }
+]

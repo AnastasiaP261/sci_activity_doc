@@ -112,7 +112,7 @@
     "model": "core.user",
     "pk": 7,
     "fields": {
-      "password": "pbkdf2_sha256$600000$cxqBf2zfp5B9ALZuHdBJEr$dY79pxhjbrc9dM7DnC4MI94021mb2i+zxPVuGfVwr2M=",
+      "password": "pbkdf2_sha256$600000$9cMC6PrptCZEBUBRRvPa1H$Vi8V3TrsoGV4wIGg2/S5/SjVEoGGKwOrvjnTlsySj+Q=",
       "last_login": null,
       "is_superuser": false,
       "username": "ivanov",

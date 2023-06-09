@@ -37,4 +37,4 @@ python manage.py runserver
 exec "$@"
 
 # для экспорта фикстур
-# python manage.py dumpdata app.model --indent 4 > fixtures__dev/fixtires_dev/model.json
+# python manage.py dumpdata app --indent 4 > app/fixtures/dev/subjects.json

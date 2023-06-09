@@ -111,17 +111,17 @@ lalalal
 
         RemakeItem(
             id=1,
-            title='Листинг кода с определенным языком',
-            description='ляляля',
-            latex_reqex=r'\\begin{lstlisting}\[.*\]([\s\S]*?)\\end{lstlisting}',
-            html_format_str='<listing style="font-family: Consolas,courier new;background-color: #f1f1f1;padding: 2px;font-size: 105%%;">\n%s\n</listing>',
-            is_head=True,
-        ).save()
-
-        RemakeItem(
             title='Листинг кода без определенного языка',
             description='ляляля',
             latex_reqex=r'\\begin{lstlisting}([\s\S]*?)\\end{lstlisting}',
+            html_format_str='<listing style="font-family: Consolas,courier new;background-color: #f1f1f1;padding: 2px;font-size: 105%%;">\n%s\n</listing>',
+            is_head=False,
+        ).save()
+
+        RemakeItem(
+            title='Листинг кода с определенным языком',
+            description='ляляля',
+            latex_reqex=r'\\begin{lstlisting}\[.*\]([\s\S]*?)\\end{lstlisting}',
             html_format_str='<listing style="font-family: Consolas,courier new;background-color: #f1f1f1;padding: 2px;font-size: 105%%;">\n%s\n</listing>',
             is_head=True,
             child_item_id=1,

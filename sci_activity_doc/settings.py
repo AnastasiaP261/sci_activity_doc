@@ -104,11 +104,13 @@ if os.environ.get("ENVIRONMENT", default=PROD_ENV) in (LOCAL_ENV, DEV_ENV):
     FIXTURE_DIRS = [
         os.path.join(BASE_DIR, 'sci_activity_doc', 'fixtures', 'dev'),
         os.path.join(BASE_DIR, 'core', 'fixtures', 'dev'),
+        os.path.join(BASE_DIR, 'latex2html', 'fixtures', 'dev'),
     ]
 else:
     FIXTURE_DIRS = [
         os.path.join(BASE_DIR, 'sci_activity_doc', 'fixtures', 'prod'),
         os.path.join(BASE_DIR, 'core', 'fixtures', 'prod'),
+        os.path.join(BASE_DIR, 'latex2html', 'fixtures', 'prod'),
     ]
 
 # Password validation
