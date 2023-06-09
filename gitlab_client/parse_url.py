@@ -7,7 +7,7 @@ from gitlab_client.consts import NOTE_ATTR_REPO_ID, NOTE_ATTR_BRANCH_NAME, NOTE_
     NOTE_ATTR_FILE_FORMAT
 
 
-def get_note_attributes(note_url: str) -> dict:
+def _get_note_attributes(note_url: str) -> dict:
     """
     Достает из url заметки все необходимые атрибуты (все атрибуты, которые должны быть закодированы - будут закодированы).
     :param note_url: url заметки
@@ -40,3 +40,11 @@ def get_note_attributes(note_url: str) -> dict:
     }
 
     return attrs
+
+
+def parse_note_type_from_url(note_url: str) -> str:
+    """
+    Достает тип заметки из ее url
+    """
+    attrs = _get_note_attributes(note_url)
+    return attrs[NOTE_ATTR_NOTE_TYPE]

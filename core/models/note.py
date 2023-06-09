@@ -12,7 +12,7 @@ class Note(models.Model):
 
     note_id = models.AutoField(verbose_name="note_id", primary_key=True)
     url = models.URLField(verbose_name="url", blank=False)  # по умолчанию max_length=200
-    note_type = models.CharField(verbose_name="note_type", max_length=20)
+    note_type = models.CharField(verbose_name="note_type", max_length=20, blank=True)
     created_at = models.DateTimeField(verbose_name='created_at', default=timezone.now)
 
     rsrch_id = models.ForeignKey(Research, blank=False,  # тк заметка может быть не привязана к графу

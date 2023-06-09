@@ -10,9 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
-from pathlib import Path
 import os
 from datetime import timedelta
+from pathlib import Path
+
 from rest_framework.settings import api_settings
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -87,8 +88,15 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'sci_activity_doc.wsgi.application'
 
-# время в секундах, на которое будет закеширован запрос списка преобразователей
-REMAKE_ITEMS_LISTS_CACHE_TIME = os.environ.get("REMAKE_ITEMS_LISTS_CACHE_TIME", 60 * 20)
+# время в секундах, на которое будет закеширован запрос детальной информации по заметке
+NOTE_DETAIL_GET_CACHE_TIME = os.environ.get("NOTE_DETAIL_GET_CACHE_TIME", 60 * 20)
+# если включено, то текст заметок будет преобразовываться в html
+REMAKE_LATEX2HTML_ENABLE = os.environ.get("REMAKE_LATEX2HTML_ENABLE", True)
+
+GITLAB_HOST = os.environ.get("GITLAB_HOST")
+GITLAB_ACCESS_TOKEN = os.environ.get("GITLAB_ACCESS_TOKEN")
+GITLAB_ACCESS_TOKEN_HEADER_KEY = os.environ.get("GITLAB_ACCESS_TOKEN_HEADER_KEY", 'PRIVATE-TOKEN')
+GITLAB_TIMEOUT = os.environ.get("GITLAB_TIMEOUT", default=2.)
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
@@ -186,7 +194,7 @@ if os.environ.get("ENVIRONMENT", default=PROD_ENV) in (LOCAL_ENV, DEV_ENV):
     }
 else:
     REST_KNOX = {
-        'SECURE_HASH_ALGORITHM': 'cryptography.hazmat.primitives.hashes.SHA512', # в курсаче укажи что тут SHA512
+        'SECURE_HASH_ALGORITHM': 'cryptography.hazmat.primitives.hashes.SHA512',  # в курсаче укажи что тут SHA512
         'USER_SERIALIZER': 'api.serializers.CustomUserSerializer',
         'TOKEN_LIMIT_PER_USER': 3,  # лимит токенов для каждого пользователя
         'EXPIRY_DATETIME_FORMAT': api_settings.DATETIME_FORMAT,

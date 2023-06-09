@@ -2,11 +2,10 @@ import requests
 from requests import Response
 from rest_framework.exceptions import AuthenticationFailed, NotFound
 
-from consts import GITLAB_HOST, GITLAB_ACCESS_TOKEN, GITLAB_ACCESS_TOKEN_HEADER_KEY, GITLAB_TIMEOUT
-from gitlab_client.consts import NOTE_ATTR_REPO_ID, NOTE_ATTR_BRANCH_NAME, NOTE_ATTR_FILE_PATH, NOTE_ATTR_FILE_FORMAT, \
-    FILE_FORMAT_TEX
-from gitlab_client.parse_url import get_note_attributes
+from gitlab_client.consts import NOTE_ATTR_REPO_ID, NOTE_ATTR_BRANCH_NAME, NOTE_ATTR_FILE_PATH, NOTE_ATTR_FILE_FORMAT
+from gitlab_client.parse_url import _get_note_attributes
 from sci_activity_doc.consts import GET_METHOD
+from sci_activity_doc.settings import GITLAB_HOST, GITLAB_ACCESS_TOKEN, GITLAB_ACCESS_TOKEN_HEADER_KEY, GITLAB_TIMEOUT
 
 
 class GLClient:
@@ -65,38 +64,18 @@ class GLClient:
         )
         return resp
 
-    def get_note_raw_text_by_url(self, note_url: str) -> str:
+    def get_note_raw_text_by_url(self, note_url: str) -> (str, str):
         """
-        Получает из гитлаба текст файла по его url
+        Получает из гитлаба текст файла по его url.
+        Первый возвращаемый параметр - текст, а второй - формат файла заметки
         """
 
-        note_attrs = get_note_attributes(note_url)
+        note_attrs = _get_note_attributes(note_url)
         resp = self._get_note_by_url(note_attrs)
 
         if resp.ok:
             text = resp.text
-            return text
-
-        elif resp.status_code == 404:
-            raise NotFound()
-
-    def get_note_html_formatted_text_by_url(self, note_url: str) -> tuple:
-        """
-            Если переданный файл имеет формат tex, то все определенные в модуле latex2html тэги будут заменены на html
-            тэги. В этом случае возвращаемое значение будет состоять из tuple длиной 2, где 0 элемент - название
-            заметки, а 1 - ее преобразованный текст
-
-            Для других форматов вернет tuple, где 0 элемент - пустая строка, а второй - содержимое файла.
-        """
-        note_attrs = get_note_attributes(note_url)
-        resp = self._get_note_by_url(note_attrs)
-
-        if resp.ok:
-            text: str = resp.text
-            if note_attrs[NOTE_ATTR_FILE_FORMAT] == FILE_FORMAT_TEX:
-                pass  # здесь происходит преобразование TODO
-            else:
-                return tuple(['', text])
+            return text, note_attrs[NOTE_ATTR_FILE_FORMAT]
 
         elif resp.status_code == 404:
             raise NotFound()

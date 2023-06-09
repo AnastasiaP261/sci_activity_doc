@@ -1,11 +1,11 @@
 from unittest import TestCase
 
-from gitlab_client.parse_url import get_note_attributes
+from gitlab_client.parse_url import _get_note_attributes
 
 
 class Test_get_note_attributes(TestCase):
     def test_1(self):
-        res = get_note_attributes(
+        res = _get_note_attributes(
             'https://some_host/rnd/rndcse/blob/master/rndcse_txb_Research/ResearchNotes/rndcse_not_dev_2021_11_21.tex')
         self.assertDictEqual(
             res,
@@ -19,7 +19,7 @@ class Test_get_note_attributes(TestCase):
         )
 
     def test_2(self):
-        res = get_note_attributes(
+        res = _get_note_attributes(
             'https://sa2systems.ru:88/rnd/rndcse/blob/2021_rk6_71_petrichukao/readme.txt')
         self.assertDictEqual(
             res,
