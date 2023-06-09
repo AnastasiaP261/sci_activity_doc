@@ -37,6 +37,7 @@ DEBUG = int(os.environ.get("DEBUG", default=0))
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
+    '0.0.0.0',
 ]
 
 # Application definition
@@ -89,14 +90,14 @@ TEMPLATES = [
 WSGI_APPLICATION = 'sci_activity_doc.wsgi.application'
 
 # время в секундах, на которое будет закеширован запрос детальной информации по заметке
-NOTE_DETAIL_GET_CACHE_TIME = os.environ.get("NOTE_DETAIL_GET_CACHE_TIME", 60 * 20)
+NOTE_DETAIL_GET_CACHE_TIME = int(os.environ.get("NOTE_DETAIL_GET_CACHE_TIME", 60 * 20))
 # если включено, то текст заметок будет преобразовываться в html
-REMAKE_LATEX2HTML_ENABLE = os.environ.get("REMAKE_LATEX2HTML_ENABLE", True)
+REMAKE_LATEX2HTML_ENABLE = bool(os.environ.get("REMAKE_LATEX2HTML_ENABLE", True))
 
 GITLAB_API_ADDRESS = os.environ.get("GITLAB_API_ADDRESS")
 GITLAB_ACCESS_TOKEN = os.environ.get("GITLAB_ACCESS_TOKEN")
 GITLAB_ACCESS_TOKEN_HEADER_KEY = os.environ.get("GITLAB_ACCESS_TOKEN_HEADER_KEY", 'PRIVATE-TOKEN')
-GITLAB_TIMEOUT = os.environ.get("GITLAB_TIMEOUT", default=2.)
+GITLAB_TIMEOUT = float(os.environ.get("GITLAB_TIMEOUT", default=2.))
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
