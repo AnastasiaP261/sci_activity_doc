@@ -49,6 +49,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'api.apps.ApiConfig',
     'core.apps.CoreConfig',
+    'gitlab_client.apps.GitlabClientConfig',
+    'latex2html.apps.Latex2HtmlConfig',
     'auth_wrapper.apps.AuthWrapperConfig',
     'knox',  # токенная авторизация
     'computed_property',  # возможность создавать вычисляемые поля и хранить их в базе
