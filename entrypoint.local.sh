@@ -18,20 +18,20 @@ else
 fi
 
 # эту строку можно комментить и запускать самостоятельно
-python manage.py flush --no-input # сброс таблиц
+#python manage.py flush --no-input # сброс таблиц
 
 python manage.py makemigrations
 python manage.py migrate
 
 # эту строку можно комментить и запускать самостоятельно
-python manage.py createcachetable
+#python manage.py createcachetable
 
-python manage.py createsuperuser \
-  --noinput \
-  --username $DJANGO_SUPERUSER_USERNAME \
-  --email $DJANGO_SUPERUSER_EMAIL
-
-python manage.py loaddata dev/subjects.json
+#python manage.py createsuperuser \
+#  --noinput \
+#  --username $DJANGO_SUPERUSER_USERNAME \
+#  --email $DJANGO_SUPERUSER_EMAIL
+#
+#python manage.py loaddata dev/subjects.json
 python manage.py runserver
 
 exec "$@"
